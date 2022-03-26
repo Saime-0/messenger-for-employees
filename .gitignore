@@ -1,0 +1,12 @@
+#graph/generated
+#graph/model/models_gen.go
+
+.database
+.idea
+.repl
+.tmp
+
+server.exe
+server
+
+*.env

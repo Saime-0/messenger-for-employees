@@ -1,0 +1,198 @@
+union UserResult =
+    | AdvancedError
+    | User
+
+union RoomsResult =
+    | AdvancedError
+    | Rooms
+
+union MembersResult =
+    | AdvancedError
+    | Members
+
+union RolesResult =
+    | AdvancedError
+    | Roles
+
+union InvitesResult =
+    | AdvancedError
+    | Invites
+
+union UsersResult =
+    | AdvancedError
+    | Users
+
+union ChatResult =
+    | AdvancedError
+    | Chat
+
+union RoleResult =
+    | AdvancedError
+    | Role
+
+union MemberResult =
+    | AdvancedError
+    | Member
+
+union AllowsResult =
+    | AdvancedError
+    | Allows
+
+union JoinByInviteResult =
+    | AdvancedError
+    | JoinedToChat
+
+union JoinToChatResult =
+    | AdvancedError
+    | JoinedToChat
+
+union LoginResult =
+    | AdvancedError
+    | TokenPair
+
+union RefreshTokensResult =
+    | AdvancedError
+    | TokenPair
+
+union RegisterResult =
+    | AdvancedError
+    | Successful
+
+union SendMessageToRoomResult =
+    | AdvancedError
+    | Successful
+
+union CreateInviteResult =
+    | AdvancedError
+    | CreatedInvite
+
+union CreateRoomResult =
+    | AdvancedError
+    | CreatedRoom
+
+union CreateRoleResult =
+    | AdvancedError
+    | CreatedRole
+
+union CreateChatResult =
+    | AdvancedError
+    | CreatedChat
+
+# Update... to MutationResult
+#union UpdateChatResult =
+#    | AdvancedError
+#    | Chat
+#
+#union UpdateMeDataResult =
+#    | AdvancedError
+#    | UserData
+#
+#union UpdateRoleResult =
+#    | AdvancedError
+#    | Role
+#
+## deprecated
+#union UpdateRoomResult =
+#    | AdvancedError
+#    | Room
+
+union ChatRolesResult =
+    | AdvancedError
+    | Roles
+
+union ChatsResult =
+    | AdvancedError
+    | Chats
+
+union InviteInfoResult =
+    | AdvancedError
+    | InviteInfo
+
+union MeResult =
+    | AdvancedError
+    | Me
+
+union MessageResult =
+    | AdvancedError
+    | Message
+
+union RoomFormResult =
+    | AdvancedError
+    | Form
+
+union MessagesResult =
+    | AdvancedError
+    | Messages
+
+union RoomResult =
+    | AdvancedError
+    | Room
+
+union UnitResult =
+    | AdvancedError
+    | Unit
+
+union UnitsResult =
+    | AdvancedError
+    | Units
+
+union UserRoleResult =
+    | AdvancedError
+    | Role
+
+union EditListenEventCollectionResult =
+    | AdvancedError
+    | ListenCollection
+
+union EventResult =
+    | NewMessage # только читателям +
+
+    | UpdateUser # всем участникам +
+
+    | CreateMember # всем участникам +
+    | UpdateMember # +
+    | DeleteMember # +
+
+    | CreateRole # всем участникам +
+    | UpdateRole # +
+    | DeleteRole # +
+
+    | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
+
+    | CreateAllows #  всем участникам +
+    | DeleteAllow # +
+
+    | UpdateChat # всем участникам +
+
+    | CreateRoom # всем участникам +
+    | UpdateRoom # +
+    | DeleteRoom # +
+
+    | CreateInvite # только определенным чарам +-
+    | DeleteInvite # +
+
+    | TokenExpired
+
+
+enum EventType {
+    all
+
+    NewMessage
+    UpdateUser
+    CreateMember
+    UpdateMember
+    DeleteMember
+    CreateRole
+    UpdateRole
+    DeleteRole
+    UpdateForm
+    CreateAllows
+    DeleteAllow
+    UpdateChat
+    CreateRoom
+    UpdateRoom
+    DeleteRoom
+    CreateInvite
+    DeleteInvite
+    TokenExpired
+}

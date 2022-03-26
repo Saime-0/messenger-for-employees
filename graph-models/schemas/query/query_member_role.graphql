@@ -1,0 +1,3 @@
+extend type Query {
+    memberRole(memberID: ID!): UserRoleResult! @goField(forceResolver: true) @isAuth
+}

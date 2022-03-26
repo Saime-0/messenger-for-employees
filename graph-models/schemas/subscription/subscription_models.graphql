@@ -1,0 +1,114 @@
+type SubscriptionBody {
+	event: EventType!
+#	action: EventSubjectAction
+	body: EventResult!
+}
+
+type NewMessage { # todo rename
+	id: ID!
+	roomID: ID!
+	replyToId: ID
+	userID: ID
+	body: String!
+	msgType: MessageType!
+	createdAt: Int64!
+}
+
+type UpdateUser {
+	id: ID!
+	domain: String!
+	name: String!
+}
+
+type CreateMember {
+	id: ID!
+	chatID: ID!
+	unit: Unit!
+}
+
+type UpdateMember {
+	id: ID!
+	roleID: ID
+	char: CharType
+	muted: Boolean!
+}
+
+type DeleteMember {
+	id: ID!
+}
+
+type CreateRole {
+	chatID: ID!
+	id: ID!
+	name: String!
+	color: HexColor!
+}
+
+type UpdateRole {
+	id: ID!
+	name: String!
+	color: HexColor!
+}
+
+type DeleteRole {
+	id: ID!
+}
+
+type UpdateRoom {
+	id: ID!
+#	chatID: ID!
+	name: String!
+	parentId: ID
+	note: String
+}
+
+type CreateRoom {
+	id: ID!
+	chatID: ID!
+	name: String!
+	parentId: ID
+	note: String
+}
+
+type DeleteRoom {
+	id: ID!
+}
+
+type UpdateForm {
+	roomID: ID!
+	form: Form
+}
+
+type CreateAllows {
+	roomID: ID!
+	allows: [Allow!]!
+}
+type DeleteAllow {
+	allowId: ID
+}
+
+type UpdateChat {
+	id: ID!
+	domain: String!
+	name: String!
+	private: Boolean!
+#	countMembers: Int!
+}
+
+type CreateInvite {
+	code: String!
+	aliens: Int
+	expiresAt: Int64
+}
+enum DeleteInviteReason {
+	BYUSER
+	EXPIRED # todo, temporarily not supported
+}
+type DeleteInvite {
+	reason: DeleteInviteReason!
+	code: String!
+}
+
+type TokenExpired {
+	message: String!
+}

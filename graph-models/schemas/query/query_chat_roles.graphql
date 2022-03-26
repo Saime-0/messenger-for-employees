@@ -1,0 +1,4 @@
+extend type Query {
+    chatRoles(chatID: ID!): ChatRolesResult! @goField(forceResolver: true) @isAuth
+}
+

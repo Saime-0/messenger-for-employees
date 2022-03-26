@@ -1,0 +1,3 @@
+extend type Mutation {
+    createChat(input: CreateChatInput!): CreateChatResult! @goField(forceResolver: true) @isAuth
+}

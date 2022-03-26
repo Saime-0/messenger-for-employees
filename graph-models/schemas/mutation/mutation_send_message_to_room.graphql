@@ -1,0 +1,4 @@
+extend type Mutation {
+    sendMessageToRoom(roomID: ID!, input: CreateMessageInput!): SendMessageToRoomResult! @goField(forceResolver: true) @isAuth
+}
+

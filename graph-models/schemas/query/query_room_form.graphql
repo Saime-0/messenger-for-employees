@@ -1,0 +1,3 @@
+extend type Query {
+    roomForm(roomID: ID!): RoomFormResult! @goField(forceResolver: true) @isAuth
+}

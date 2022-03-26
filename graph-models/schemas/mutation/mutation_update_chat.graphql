@@ -1,0 +1,3 @@
+extend type Mutation {
+    updateChat(chatID: ID!, input: UpdateChatInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
+}
