@@ -1,3 +1,0 @@
-extend type Query {
-    inviteInfo(code: String!): InviteInfoResult! @goField(forceResolver: true)
-}

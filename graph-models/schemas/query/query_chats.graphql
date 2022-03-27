@@ -1,3 +1,0 @@
-extend type Query {
-    chats(find: FindChats! @inputLeastOne, params: Params): ChatsResult! @goField(forceResolver: true) @isAuth
-}

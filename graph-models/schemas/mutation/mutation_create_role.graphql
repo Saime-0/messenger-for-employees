@@ -1,4 +1,0 @@
-extend type Mutation {
-    createRole(input: CreateRoleInput!): CreateRoleResult! @goField(forceResolver: true) @isAuth
-
-}

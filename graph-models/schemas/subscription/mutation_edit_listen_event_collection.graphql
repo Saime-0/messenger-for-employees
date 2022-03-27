@@ -5,6 +5,6 @@ extend type Mutation {
 		action: EventSubjectAction!
 		targetChats: [ID!]!
 		listenEvents: [EventType!]!
-	): EditListenEventCollectionResult! @goField(forceResolver: true) @isAuth
+	): EditListenEventCollectionResult! @goField @isAuth
 }
 

@@ -1,3 +1,0 @@
-extend type Mutation {
-    joinToChat(chatID: ID!): JoinToChatResult! @goField(forceResolver: true) @isAuth
-}

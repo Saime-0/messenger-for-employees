@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		panic(cerrors.Wrap(err, "ошибка инициализации компонента восстановления"))
 	}
-	//hlr.Emergency("test emegrency")
+	//hlr.Emergency("test emergency")
 
 	// init database
 	db, err := store.InitDB(cfg)

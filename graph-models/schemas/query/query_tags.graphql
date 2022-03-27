@@ -1,0 +1,3 @@
+extend type Query {
+    tags(params: Params): TagsResult! @goField @isAuth
+}

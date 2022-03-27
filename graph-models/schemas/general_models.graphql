@@ -1,52 +1,19 @@
-enum UnitType {
-    CHAT
-    USER
-}
-enum FieldType {
-    EMAIL
-    DATE
-    LINK
-    TEXT
-    NUMERIC
-}
-enum MessageType {
-    SYSTEM
-    USER
-    FORMATTED
-}
 enum FetchType {
     POSITIVE
     NEUTRAL
     NEGATIVE
 }
-enum CharType {
-    ADMIN
-    MODER
-}
 enum ActionType {
     READ
     WRITE
-}
-enum GroupType {
-    ROLE
-    CHAR
-    MEMBER
 }
 enum EventSubjectAction {
     ADD
     DELETE
 }
-enum AllowAction {
-    READ
-    WRITE
-}
-enum AllowGroup {
-    CHAR
-    ROLE
-    MEMBER
-}
-type Chars {
-    chars: [CharType!]
+enum RoomType {
+    TALK
+    BLOG
 }
 
 input Params {
@@ -59,164 +26,74 @@ type TokenPair {
     refreshToken: String!
 }
 
-type Unit {
-    id: ID!
-    domain: String!
-    name: String!
-    type: UnitType!
+type Employee {
+    empID: ID!
+    firstName: String!
+    lastName: String!
+    joinedAt: Int64!
+    # for the client
+    tags: Tags!
+}
+type Employees {
+    employees: [Employee!]
 }
 
-type Units {
-    units: [Unit!]
-}
-
-type Chat {
-    unit: Unit!
-    owner: UserResult! @goField(forceResolver: true)
-    rooms: RoomsResult @goField(forceResolver: true)
-    private: Boolean!
-    countMembers: Int!
-    members: MembersResult! @goField(forceResolver: true)
-    roles: RolesResult! @goField(forceResolver: true)
-    invites: InvitesResult! @goField(forceResolver: true)
-    banlist: UsersResult! @goField(forceResolver: true)
-    me: MemberResult! @goField(forceResolver: true)
-}
-type Chats {
-    chats: [Chat!]
+type PersonalData {
+    email: String!
+    phoneNumber: String!
+    token: String!
 }
 
 type Room {
     roomID: ID!
-    chat: Chat! @goField(forceResolver: true)
     name: String!
-    parentId: ID
-    note: String
-    form: RoomFormResult @goField(forceResolver: true) # не проверено
-    allows: AllowsResult! @goField(forceResolver: true)
-    messages(find: FindMessagesInRoom!): MessagesResult! @goField(forceResolver: true)
-    #todo next: prev: or symbolindex:
+    view: RoomType!
+    # for the client
+    lastMessageRead: ID!
+    members: Members! @goField
 }
-
-
 type Rooms {
     rooms: [Room!]
 }
 
-type Form {
-    fields: [FormField!]!
-}
-
-type FormField {
-    key: String!
-    type: FieldType!
-    optional: Boolean!
-    length: Int
-    items: [String!]
-}
-
 type Member {
-    id: ID!
-    chat: Chat! @goField(forceResolver: true)
-    user: User!
-    role: RoleResult @goField(forceResolver: true)
-    char: CharType
-    joinedAt: Int64!
-    muted: Boolean!
+    employee: Employee! @goField
+    room: Room! @goField
 }
-
 type Members {
     members: [Member!]
 }
 
-type Role {
-    id: ID!
+type Tag {
+    tagID: ID!
     name: String!
-    color: HexColor!
 }
-
-type Roles {
-    roles: [Role!]
+type Tags {
+    tags: [Tag!]
 }
 
 type Message {
-    id: ID!
-    room: Room! @goField(forceResolver: true)
-    replyTo: Message @goField(forceResolver: true)
-    user: User @goField(forceResolver: true)
+    room: Room! @goField
+    msgID: ID!
+    employee: Employee! @goField
+    targetMsgID: ID @goField
     body: String!
-    type: MessageType!
     createdAt: Int64!
 }
-
 type Messages {
     messages: [Message!]
 }
 
-type Invite {
-    code: String!
-    aliens: Int
-    expiresAt: Int64
-}
-
-type Invites {
-    invites: [Invite!]
-}
-
-type InviteInfo {
-    unit: Unit!
-    private: Boolean!
-    countMembers: Int!
-}
-type User {
-    unit: Unit!
-}
-
-type Users {
-    users: [User!]
-}
-
-type Allows {
-    room: Room! # 04.12 1:55 todo
-    allows: [Allow]!
-}
-
-type PermissionHoldersSub {
-    roles: [ID!]
-    chars: Chars!
-    members: [ID!]
-}
-type UserData {
-    email: String!
-}
 type Me {
-    user: User!
-    data: UserData!
-    chats: Chats! @goField(forceResolver: true)
-    ownedChats: Chats! @goField(forceResolver: true)
-}
-
-# using internal code
-type Case {
-    key: String!
-    value: String!
-}
-type UserChoice {
-    choice: [Case!]
-}
-# end
-
-type Allow {
-    id: ID!
-    action: AllowAction!
-    group: AllowGroup!
-    value: String!
+    employee: Employee!
+    personal: PersonalData!
+    rooms: Rooms! @goField
 }
 
 type ListenCollection {
     sessionKey: String!
     success: String!
-    collection: [ListenedChat!]! @goField(forceResolver: true)
+    collection: [ListenedChat!]! @goField
 }
 
 type ListenedChat {

@@ -1,329 +1,97 @@
-create type unit_type as enum ('USER', 'CHAT');
+create type room_type as enum ('TALK', 'BLOG');
 
-create type message_type as enum ('SYSTEM', 'USER', 'FORMATTED');
-
-create type action_type as enum ('READ', 'WRITE');
-
-create type group_type as enum ('MEMBER', 'CHAR', 'ROLE');
-
-create type fetch_type as enum ('POSITIVE', 'NEUTRAL', 'NEGATIVE');
-
-create type char_type as enum ('ADMIN', 'MODER');
-
-create type findallow as
+create table admins
 (
-    act varchar,
-    gr varchar,
-    val varchar
+    admin_id bigserial,
+    token varchar(32) not null,
+    email varchar(64) not null,
+    primary key (admin_id)
 );
 
-create table if not exists schema_migrations
+create table employees
 (
-    version bigint not null
-        primary key,
-    dirty boolean not null
+    emp_id bigserial,
+    first_name varchar(32) not null,
+    last_name varchar(32) not null,
+    email varchar(64) not null,
+    phone_number varchar(32) not null,
+    joined_at bigint default unix_utc_now() not null,
+    token varchar(32) not null,
+    comment varchar(512),
+    primary key (emp_id)
 );
 
-create or replace function generate_secret(len bigint) returns text
-    language sql
-as $$
-SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
-FROM generate_series(1, len)
-$$;
-
-create table if not exists units
+create table tags
 (
-    id bigserial
-        primary key,
-    domain varchar(32) not null
-        unique,
-    name varchar(32) not null,
-    type unit_type not null
+    tag_id bigserial,
+    name varchar(64) not null,
+    primary key (tag_id)
 );
 
-create table if not exists users
+create table rooms
 (
-    id bigint not null
-        primary key
-        references units
-            on delete cascade,
-    hashed_password varchar(128) not null,
-    email varchar(256) not null
-        unique
+    room_id bigserial,
+    name varchar(64) not null,
+    view room_type not null,
+    primary key (room_id)
 );
 
-create table if not exists chats
+create table msg_count
 (
-    id bigint not null
-        primary key
-        references units
-            on delete cascade,
-    owner_id bigint not null
-        references users
-            on delete cascade,
-    private boolean not null
+    room_id bigint not null,
+    val bigint default 0 not null,
+    primary key (room_id),
+    foreign key (room_id) references rooms
+        on delete cascade
 );
 
-create table if not exists chat_banlist
+create table members
 (
-    chat_id bigint not null
-        references chats
-            on delete cascade,
-    user_id bigint not null
-        references users
+    emp_id bigint not null,
+    room_id bigint not null,
+    last_msg_read bigint default 0 not null,
+    foreign key (emp_id) references employees
+        on delete cascade,
+    foreign key (room_id) references rooms
+        on delete cascade
 );
 
-create table if not exists invites
+create table positions
 (
-    code varchar(16) default generate_secret((16)::bigint) not null,
-    chat_id bigint not null
-        constraint invite_links_chat_id_fkey
-            references chats
-            on delete cascade,
-    aliens smallint,
-    expires_at bigint,
-    id bigserial
-        constraint invites_pk
-            primary key
+    emp_id bigint not null,
+    tag_id bigint not null,
+    foreign key (emp_id) references employees
+        on delete cascade,
+    foreign key (tag_id) references tags
+        on delete cascade
 );
 
-create unique index if not exists invites_code_uindex
-    on invites (code);
-
-create table if not exists rooms
+create table refresh_sessions
 (
-    id bigserial
-        primary key,
-    chat_id bigint not null
-        references chats
-            on delete cascade,
-    parent_id bigint
-                   references rooms
-                       on delete set null,
-    name varchar(32) not null,
-    note varchar(64) default NULL::character varying,
-    msg_format varchar(8192) default NULL::character varying
+    id bigserial,
+    emp_id bigint,
+    refresh_token varchar(32) not null,
+    expires_at bigint not null,
+    created_at bigint default unix_utc_now() not null,
+    foreign key (emp_id) references employees
 );
 
-create table if not exists roles
+create table messages
 (
-    id bigserial
-        primary key,
-    chat_id bigint not null
-        references chats
-            on delete cascade,
-    name varchar(32) not null,
-    color varchar(7) not null
+    room_id bigint not null,
+    msg_id bigint not null,
+    emp_id bigint not null,
+    target_id bigint,
+    body varchar(2048) not null,
+    created_at bigint default unix_utc_now() not null,
+    foreign key (room_id) references rooms
+        on delete cascade,
+    foreign key (emp_id) references employees
+        on delete cascade
 );
 
-create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
+create function unix_utc_now(bigint DEFAULT 0) returns bigint
     language sql
 as $$
 SELECT (date_part('epoch'::text, now()))::bigint + $1
 $$;
-
-create table if not exists chat_members
-(
-    id bigserial
-        primary key,
-    user_id bigint not null
-        references users,
-    chat_id bigint not null
-        references chats
-            on delete cascade,
-    role_id bigint
-                   references roles
-                       on delete set null,
-    char char_type,
-    joined_at bigint default unix_utc_now() not null,
-    muted boolean default false not null
-);
-
-create table if not exists messages
-(
-    id bigserial
-        primary key,
-    reply_to bigint
-                                             references messages
-                                                 on delete set null,
-    user_id bigint
-        constraint messages_users_id_fk
-            references users,
-    room_id bigint not null
-        references rooms
-            on delete cascade,
-    body varchar(8192) not null,
-    type message_type not null,
-    created_at bigint default unix_utc_now() not null
-);
-
-create table if not exists refresh_sessions
-(
-    id bigserial
-        primary key,
-    user_id bigint not null
-        references users,
-    refresh_token varchar(32) not null,
-    user_agent varchar(1024) not null,
-    expires_at bigint not null,
-    created_at bigint default unix_utc_now() not null
-);
-
-create table if not exists votes
-(
-    id bigserial
-        primary key,
-    room_id bigint not null
-        references rooms
-            on delete cascade,
-    question varchar(64) not null,
-    date bigint not null
-);
-
-create table if not exists vote_answers
-(
-    id bigserial
-        primary key,
-    vote_id bigint not null
-        references votes
-            on delete cascade,
-    answer varchar(64) not null
-);
-
-create table if not exists voters
-(
-    id bigserial
-        primary key,
-    answer_id bigint not null
-        references vote_answers
-            on delete cascade,
-    user_id bigint not null
-        references users
-);
-
-create table if not exists allows
-(
-    room_id bigint not null
-        references rooms
-            on delete cascade,
-    action_type action_type not null,
-    group_type group_type not null,
-    value varchar(19) not null,
-    id bigserial
-        primary key
-);
-
-create table if not exists count_members
-(
-    id bigserial
-        primary key,
-    chat_id bigint not null
-        references chats,
-    count_value integer default 0 not null
-);
-
-
-create or replace function generate_num_secret(len bigint) returns text
-    language sql
-as $$
-SELECT string_agg (substr('0123456789', ceil (random() * 10)::integer, 1), '')
-FROM generate_series(1, len)
-$$;
-
-create table if not exists registration_session
-(
-    id bigserial,
-    domain varchar(32) not null
-        unique,
-    name varchar(32) not null,
-    email varchar(256) not null
-        unique,
-    hashed_password varchar(128) not null,
-    verify_code varchar(6) default generate_num_secret((6)::bigint) not null,
-    expires_at bigint
-);
-
-create or replace function generate_invite_code() returns text
-    language sql
-as $$
-SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
-FROM generate_series(1, 16)
-$$;
-
-create or replace function delete_allow() returns trigger
-    language plpgsql
-as $$
-BEGIN
-    IF tg_table_name = 'chat_members' THEN
-        DELETE FROM allows
-        WHERE group_type = 'MEMBER' AND value = old.id::VARCHAR;
-    ELSE
-        DELETE FROM allows
-        WHERE group_type = 'ROLE' AND value = OLD.ID::VARCHAR;
-    end if;
-    raise notice '%', old.id;
-    RETURN NULL;
-end;
-$$;
-
-create trigger on_delete_role
-    after delete
-    on roles
-    for each row
-execute procedure delete_allow();
-
-create trigger on_delete_member
-    after delete
-    on chat_members
-    for each row
-execute procedure delete_allow();
-
-create or replace function change_count_members() returns trigger
-    language plpgsql
-as $$
-BEGIN
-    if tg_op = 'INSERT' then
-        update count_members
-        set count_value = count_value + 1
-        where count_members.chat_id = new.chat_id;
-        return new;
-    else if tg_op = 'DELETE' then
-        update count_members
-        set count_value = count_value - 1
-        where count_members.chat_id = new.chat_id;
-        return new;
-    end if;
-    end if;
-    raise exception 'operation could not be detected';
-end;
-$$;
-
-create trigger on_change_members_table
-    after insert or delete
-    on chat_members
-    for each row
-execute procedure change_count_members();
-
-create or replace function create_or_delete_count_members_row() returns trigger
-    language plpgsql
-as $$
-begin
-    if tg_op = 'INSERT' then
-        insert into count_members (chat_id) values (new.id);
-        return new;
-    else if tg_op = 'DELETE' then
-        delete from count_members WHERE chat_id = old.id;
-        return old;
-    end if;
-    end if;
-    raise exception 'operation could not be detected';
-end;
-$$;
-
-create trigger on_create_chat
-    after insert or delete
-    on chats
-    for each row
-execute procedure create_or_delete_count_members_row();
-
-

@@ -1,3 +1,0 @@
-extend type Mutation {
-	deleteRoom(roomID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
-}

@@ -1,3 +1,0 @@
-extend type Mutation {
-    joinByInvite(code: String!): JoinByInviteResult! @goField(forceResolver: true) @isAuth
-}

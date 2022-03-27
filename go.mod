@@ -3,14 +3,14 @@ module github.com/saime-0/http-cute-chat
 go 1.17
 
 require (
-	github.com/99designs/gqlgen v0.16.0
+	github.com/99designs/gqlgen v0.17.2
 	github.com/BurntSushi/toml v0.4.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/lib/pq v1.10.4
 	github.com/pkg/errors v0.9.1
 	github.com/robbert229/jwt v2.0.0+incompatible
-	github.com/vektah/gqlparser/v2 v2.3.1
+	github.com/vektah/gqlparser/v2 v2.4.0
 	go.mongodb.org/mongo-driver v1.8.2
 )
 

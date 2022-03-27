@@ -1,3 +1,0 @@
-extend type Mutation {
-	deleteRole(roleID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
-}

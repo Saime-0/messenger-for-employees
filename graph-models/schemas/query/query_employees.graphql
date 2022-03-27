@@ -1,0 +1,3 @@
+extend type Query {
+    employees(find: FindEmployees! @inputLeastOne, params: Params): EmployeesResult! @goField @isAuth
+}

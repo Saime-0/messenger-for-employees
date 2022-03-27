@@ -1,3 +1,0 @@
-extend type Mutation {
-	createAllows(roomID: ID!, input: AllowsInput!): MutationResult! @goField(forceResolver: true) @isAuth
-}

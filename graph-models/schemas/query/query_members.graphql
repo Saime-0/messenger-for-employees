@@ -1,3 +1,0 @@
-extend type Query {
-    members(find: FindMembers!): MembersResult! @goField(forceResolver: true) @isAuth
-}
