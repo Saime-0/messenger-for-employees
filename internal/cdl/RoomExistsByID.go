@@ -44,9 +44,9 @@ func (c *parentCategory) roomExistsByID() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, id is not null
+		SELECT ptr, room_id is not null
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, roomid)
-		LEFT JOIN rooms u ON u.id = inp.roomid
+		LEFT JOIN rooms u ON u.room_id = inp.roomid
 		`,
 		pq.Array(ptrs),
 		pq.Array(roomIDs),

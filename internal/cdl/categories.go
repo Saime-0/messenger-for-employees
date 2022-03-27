@@ -1,31 +1,39 @@
 package cdl
 
 type Categories struct {
-	Rooms            *parentCategory
-	UserIsChatMember *parentCategory
-	User             *parentCategory
-	FindMemberBy     *parentCategory
-	ChatIDByMemberID *parentCategory
-	Message          *parentCategory
-	Room             *parentCategory
-	MemberRole       *parentCategory
-	UnitExistsByID   *parentCategory
-	RoomExistsByID   *parentCategory
+	Rooms                *parentCategory
+	EmployeeIsRoomMember *parentCategory
+	User                 *parentCategory
+	FindMemberBy         *parentCategory
+	ChatIDByMemberID     *parentCategory
+	Message              *parentCategory
+	Room                 *parentCategory
+	MemberRole           *parentCategory
+	UnitExistsByID       *parentCategory
+	RoomExistsByID       *parentCategory
+	MessageExists        *parentCategory
 }
 
 func (d *Dataloader) ConfigureDataloader() {
 	d.categories = &Categories{
-		Rooms:            d.newRoomsCategory(),
-		UserIsChatMember: d.newUserIsChatMemberCategory(),
-		User:             d.newUserCategory(),
-		FindMemberBy:     d.newFindMemberByCategory(),
-		ChatIDByMemberID: d.newChatIDByMemberIDCategory(),
-		Message:          d.newMessageCategory(),
-		Room:             d.newRoomCategory(),
-		MemberRole:       d.newMemberRoleCategory(),
-		UnitExistsByID:   d.newUnitExistsByIDCategory(),
-		RoomExistsByID:   d.newRoomExistsByIDCategory(),
+		Rooms:                d.newRoomsCategory(),
+		EmployeeIsRoomMember: d.newEmployeeIsRoomMemberCategory(),
+		User:                 d.newUserCategory(),
+		FindMemberBy:         d.newFindMemberByCategory(),
+		ChatIDByMemberID:     d.newChatIDByMemberIDCategory(),
+		Message:              d.newMessageCategory(),
+		Room:                 d.newRoomCategory(),
+		MemberRole:           d.newMemberRoleCategory(),
+		UnitExistsByID:       d.newUnitExistsByIDCategory(),
+		RoomExistsByID:       d.newRoomExistsByIDCategory(),
+		MessageExists:        d.newMessageExistsCategory(),
 	}
+}
+
+func (d *Dataloader) newMessageExistsCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.messageExists
+	return c
 }
 
 func (d *Dataloader) newRoomExistsByIDCategory() *parentCategory {
@@ -76,9 +84,9 @@ func (d *Dataloader) newUserCategory() *parentCategory {
 	return c
 }
 
-func (d *Dataloader) newUserIsChatMemberCategory() *parentCategory {
+func (d *Dataloader) newEmployeeIsRoomMemberCategory() *parentCategory {
 	c := d.newParentCategory()
-	c.LoadFn = c.userIsChatMember
+	c.LoadFn = c.employeeIsRoomMember
 	return c
 }
 

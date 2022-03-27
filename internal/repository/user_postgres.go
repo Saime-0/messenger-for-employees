@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"strings"
 )
 
 type UsersRepo struct {
@@ -158,32 +159,33 @@ func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
 	return
 }
 
-func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
+func (r *UsersRepo) Me(empID int) (*model.Me, error) {
 	me := &model.Me{
-		User: &model.User{
-			Unit: new(model.Unit),
-		},
-		Data: &model.UserData{},
+		Employee: new(model.Employee),
+		Personal: new(model.PersonalData),
 	}
 	err := r.db.QueryRow(`
-		SELECT coalesce(units.id, 0), 
-		       coalesce(units.domain,''), 
-		       coalesce(units.name, ''), 
-		       coalesce(units.type, 'USER'), 
-		       coalesce(users.email, '')
-		FROM units INNER JOIN users
-		ON units.id = users.id
-		WHERE units.id = $1`,
-		usersId,
+		SELECT coalesce(e.emp_id, 0), 
+		       coalesce(e.first_name,''), 
+		       coalesce(e.last_name, ''), 
+		       coalesce(e.joined_at, 0),
+		       coalesce(e.email, ''), 
+		       coalesce(e.phone_number, ''), 
+		       coalesce(e.token, '')
+		FROM employees e
+		WHERE e.emp_id = $1`,
+		empID,
 	).Scan(
-		&me.User.Unit.ID,
-		&me.User.Unit.Domain,
-		&me.User.Unit.Name,
-		&me.User.Unit.Type,
-		&me.Data.Email,
+		&me.Employee.EmpID,
+		&me.Employee.FirstName,
+		&me.Employee.LastName,
+		&me.Employee.JoinedAt,
+		&me.Personal.Email,
+		&me.Personal.PhoneNumber,
+		&me.Personal.Token,
 	)
 
-	if me.User.Unit.ID == 0 {
+	if me.Employee.EmpID == 0 {
 		return nil, nil
 	}
 
@@ -266,34 +268,61 @@ func (r *UsersRepo) ChatsID(userID int) ([]int, error) {
 
 	return chats, err
 }
-func (r *UsersRepo) FindUsers(inp *model.FindUsers) (*model.Users, error) {
-	users := &model.Users{}
-	if inp.NameFragment != nil {
-		*inp.NameFragment = "%" + *inp.NameFragment + "%"
+func (r *UsersRepo) FindEmployees(inp *model.FindEmployees) (*model.Employees, error) {
+	var (
+		users        = new(model.Employees)
+		fullName     []string
+		fname, lname = " ", " "
+	)
+	if inp.Name != nil {
+		//*inp.Name = "%" + *inp.Name + "%"
+		fullName = strings.Split(*inp.Name, " ")
+		fname = "%" + fullName[0] + "%"
+		if len(fullName) > 1 {
+			lname = "%" + fullName[1] + "%"
+		}
 	}
 	rows, err := r.db.Query(`
-		SELECT units.id, units.domain, units.name, units.type
-		FROM units JOIN users ON units.id = users.id 
-		WHERE	($1 IS NULL OR units.id = $1)
-			AND ($2 IS NULL OR units.domain = $2)
-			AND ($3 IS NULL OR units.name ILIKE $3)
+		SELECT e.emp_id, e.first_name, e.last_name, e.joined_at
+		FROM employees e 
+		    LEFT JOIN positions p ON e.emp_id = p.emp_id 
+			LEFT JOIN members m ON m.emp_id = e.emp_id 
+		WHERE (
+		    $1 IS NULL OR
+		    e.emp_id = $1
+		) AND (
+			$2 IS NULL OR
+			m.room_id = $2
+		)
+		AND (
+			$3 IS NULL OR
+			p.tag_id = $3
+		) AND (
+		    $4 = ' ' OR 
+		    e.first_name ILIKE $4 OR e.last_name ILIKE $4
+		) AND (
+		    $5 = ' ' OR 
+		    e.first_name ILIKE $5 OR e.last_name ILIKE $5
+		)
+		GROUP BY e.emp_id 
 		`,
-		inp.ID,
-		inp.Domain,
-		inp.NameFragment,
+		inp.EmpID,
+		inp.RoomID,
+		inp.TagID,
+		fname,
+		lname,
 	)
+
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := &model.User{
-			Unit: new(model.Unit),
-		}
-		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
+		m := new(model.Employee)
+		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName, &m.JoinedAt); err != nil {
 			return nil, err
 		}
-		users.Users = append(users.Users, m)
+		users.Employees = append(users.Employees, m)
 	}
 
 	return users, nil

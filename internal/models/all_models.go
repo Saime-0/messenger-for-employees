@@ -14,21 +14,11 @@ type Invite struct {
 }
 
 type CreateMessage struct {
-	ReplyTo *int
-	UserID  *int
-	RoomID  int
-	Body    string
-	Type    model.MessageType
+	TargetMsgID *int
+	EmployeeID  int
+	RoomID      int
+	Body        string
 	// CreatedAt int64 migrate to postgres
-}
-
-type MessageInfo struct {
-	ID      int               `json:"id"`
-	ReplyTo int               `json:"reply_to"`
-	Author  int               `json:"author"`
-	Body    string            `json:"body"`
-	Type    model.MessageType `json:"type"`
-	Time    int               `json:"time"`
 }
 
 /* // todo
@@ -60,41 +50,11 @@ type RefreshSession struct {
 	ExpAt        int64
 }
 
-type UserInfo struct {
-	ID     int    `json:"id"`
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
-}
-
-type AllowHolder struct {
-	RoleID   *int
-	Char     *model.CharType
-	UserID   int
-	MemberID int
-}
-
 type Unit struct {
 	ID     int    `json:"id"`
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 	Type   res.UnitType
-}
-
-type Chat struct {
-	Unit    Unit
-	Private bool
-}
-
-type DemoMember struct {
-	UserID   int
-	MemberID int
-	IsOwner  bool
-	Char     *model.CharType
-	Muted    bool
-}
-type DefMember struct {
-	UserID int
-	ChatID int
 }
 
 type ScheduleInvite struct {
@@ -116,11 +76,6 @@ type ScheduleRefreshSession struct {
 	Task *scheduler.Task
 }
 
-type SubUser struct {
-	MemberID *int
-	ChatID   *int
-}
-
 type LoginRequisites struct {
 	Email        string
 	HashedPasswd string
@@ -131,4 +86,9 @@ type RegisterData struct {
 	Name         string
 	Email        string
 	HashPassword string
+}
+
+type SubUser struct {
+	MemberID *int
+	ChatID   *int
 }

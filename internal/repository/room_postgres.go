@@ -405,45 +405,33 @@ func (r *RoomsRepo) AllowsIsSet(roomID int) (have bool) {
 	return
 }
 
-func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) (*model.Rooms, error) {
+func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *model.Params) (*model.Rooms, error) {
 	rooms := &model.Rooms{
 		Rooms: []*model.Room{},
 	}
-	if inp.NameFragment != nil {
-		*inp.NameFragment = "%" + *inp.NameFragment + "%"
+	if inp.Name != nil {
+		*inp.Name = "%" + *inp.Name + "%"
 	}
-	// language=PostgreSQL
+
 	rows, err := r.db.Query(`
-		SELECT rooms.id, chats.id,  name, parent_id, note
-		FROM rooms
-		JOIN chats ON rooms.chat_id = chats.id
-		WHERE chat_id = $1
-			AND (
+		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read
+		FROM rooms r
+		JOIN members m 
+		    ON m.room_id = r.room_id AND m.emp_id = $1 
+		WHERE (
 			    $2::BIGINT IS NULL 
-			    OR rooms.id = $2 
+			    OR r.room_id = $2 
 			)
 			AND (
 			    $3::VARCHAR IS NULL 
-			    OR rooms.name ILIKE $3
-			)
-			AND (
-			    $5::fetch_type IN (NULL, 'NEUTRAL') 
-			    OR $5::fetch_type = 'POSITIVE' 
-			           AND parent_id IS NOT NULL AND (
-			               $4::BIGINT IS NULL 
-			               OR parent_id = $4
-			           )
-			    OR $5::fetch_type = 'NEGATIVE' 
-			           AND parent_id IS NULL
+			    OR r.name ILIKE $3
 			)
 		LIMIT $6
 		OFFSET $7
 	`,
-		inp.ChatID,
+		employeeID,
 		inp.RoomID,
-		inp.NameFragment,
-		inp.ParentID,
-		inp.IsChild,
+		inp.Name,
 		params.Limit,
 		params.Offset,
 	)
@@ -452,12 +440,8 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) (*mode
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := &model.Room{
-			Chat: &model.Chat{
-				Unit: new(model.Unit),
-			},
-		}
-		if err = rows.Scan(&m.RoomID, &m.Chat.Unit.ID, &m.Name, &m.ParentID, &m.Note); err != nil {
+		m := new(model.Room)
+		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead); err != nil {
 			return nil, err
 		}
 

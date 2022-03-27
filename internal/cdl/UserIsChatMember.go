@@ -5,59 +5,59 @@ import (
 	"github.com/lib/pq"
 )
 
-func (r *UserIsChatMemberResult) isRequestResult() {}
-func (r *UserIsChatMemberInp) isRequestInput()     {}
+func (r *EmployeeIsRoomMemberResult) isRequestResult() {}
+func (r *EmployeeIsRoomMemberInp) isRequestInput()     {}
 
 type (
-	UserIsChatMemberInp struct {
-		UserID int
-		ChatID int
+	EmployeeIsRoomMemberInp struct {
+		EmployeeID int
+		RoomID     int
 	}
-	UserIsChatMemberResult struct {
+	EmployeeIsRoomMemberResult struct {
 		Exists bool
 	}
 )
 
-func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
+func (d *Dataloader) EmployeeIsRoomMember(userID, roomID int) (bool, error) {
 
-	res := <-d.categories.UserIsChatMember.addBaseRequest(
-		&UserIsChatMemberInp{
-			UserID: userID,
-			ChatID: chatID,
+	res := <-d.categories.EmployeeIsRoomMember.addBaseRequest(
+		&EmployeeIsRoomMemberInp{
+			EmployeeID: userID,
+			RoomID:     roomID,
 		},
-		new(UserIsChatMemberResult),
+		new(EmployeeIsRoomMemberResult),
 	)
 	if res == nil {
-		return false, d.categories.UserIsChatMember.Error
+		return false, d.categories.EmployeeIsRoomMember.Error
 	}
-	return res.(*UserIsChatMemberResult).Exists, nil
+	return res.(*EmployeeIsRoomMemberResult).Exists, nil
 }
 
-func (c *parentCategory) userIsChatMember() {
+func (c *parentCategory) employeeIsRoomMember() {
 	var (
 		inp = c.Requests
 
-		ptrs    []chanPtr
-		userIDs []int
-		chatIDs []int
+		ptrs        []chanPtr
+		employeeIDs []int
+		roomIDs     []int
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
-		userIDs = append(userIDs, query.Inp.(*UserIsChatMemberInp).UserID)
-		chatIDs = append(chatIDs, query.Inp.(*UserIsChatMemberInp).ChatID)
+		employeeIDs = append(employeeIDs, query.Inp.(*EmployeeIsRoomMemberInp).EmployeeID)
+		roomIDs = append(roomIDs, query.Inp.(*EmployeeIsRoomMemberInp).RoomID)
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, id is not null 
-		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, userid, chatid)
-		LEFT JOIN chat_members m ON m.chat_id = inp.chatid AND m.user_id = inp.userid
+		SELECT ptr, room_id is not null 
+		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, empid, roomid)
+		LEFT JOIN members m ON m.room_id = inp.roomid AND m.emp_id = inp.empid
 		`,
 		pq.Array(ptrs),
-		pq.Array(userIDs),
-		pq.Array(chatIDs),
+		pq.Array(employeeIDs),
+		pq.Array(roomIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("userIsChatMember:" + err.Error())
+		//c.Dataloader.healer.Alert("employeeIsRoomMember:" + err.Error())
 		c.Error = err
 		return
 	}
@@ -70,13 +70,13 @@ func (c *parentCategory) userIsChatMember() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &isMember); err != nil {
-			//c.Dataloader.healer.Alert("userIsChatMember (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("employeeIsRoomMember (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}
 
 		request := c.getRequest(ptr)
-		request.Result.(*UserIsChatMemberResult).Exists = isMember
+		request.Result.(*EmployeeIsRoomMemberResult).Exists = isMember
 	}
 
 	c.Error = nil

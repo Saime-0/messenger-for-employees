@@ -76,7 +76,7 @@ type Message {
     room: Room! @goField
     msgID: ID!
     employee: Employee! @goField
-    targetMsgID: ID @goField
+    targetMsgID: Message @goField
     body: String!
     createdAt: Int64!
 }

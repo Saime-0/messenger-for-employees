@@ -980,7 +980,38 @@ func (r *RoomsRepo) RolesByArray(roleIDs *[]int) (*model.Roles, error) {
 
 }
 
-func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, holder *models.AllowHolder) (*model.Messages, error) {
+func (r *ChatsRepo) Tags(params *model.Params) (*model.Tags, error) {
+
+	tags := &model.Tags{
+		Tags: []*model.Tag{},
+	}
+
+	var rows, err = r.db.Query(`
+		SELECT t.tag_id, t.name
+		FROM tags t
+		LIMIT $1
+		OFFSET $2
+		`,
+		params.Limit,
+		params.Offset,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		m := new(model.Tag)
+		if err = rows.Scan(&m.TagID, &m.Name); err != nil {
+			return nil, err
+		}
+		tags.Tags = append(tags.Tags, m)
+	}
+
+	return tags, nil
+}
+
+func (r *ChatsRepo) FindMessages(empID int, inp *model.FindMessages, params *model.Params) (*model.Messages, error) {
 
 	messages := &model.Messages{
 		Messages: []*model.Message{},
@@ -990,50 +1021,35 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 	}
 
 	var rows, err = r.db.Query(`
-		SELECT messages.id, reply_to, user_id, messages.room_id, body, messages.type, created_at
-		FROM messages 
-		LEFT JOIN allows
-			ON messages.room_id = allows.room_id
-		WHERE messages.room_id IN (
-		    SELECT rooms.id 
-		    FROM chats
-		    JOIN rooms
-		        ON chats.id = rooms.chat_id
-		    LEFT JOIN allows 
-			    ON rooms.id = allows.room_id 
-		    WHERE chats.id = $1 
-			AND (
-			    $2::BIGINT IS NULL 
-			    OR rooms.id = $2
-			)
-		    AND (
-		        action_type IS NULL 
-		        OR action_type = 'READ'
-		            AND (
-						group_type = 'ROLE' AND value = $3::VARCHAR
-						OR group_type = 'CHAR' AND value = $4::VARCHAR
-						OR group_type = 'MEMBER' AND value = $5::VARCHAR
-					)
-		        OR owner_id = $5::BIGINT 
-	        )
+		SELECT m.room_id, m.msg_id, m.emp_id, m.target_id, m.body, m.created_at
+		FROM messages m
+		WHERE (
+		    $1::BIGINT IS NULL 
+		    OR m.msg_id = $1
 		)
 		AND (
-		    $6::BIGINT IS NULL 
-		    OR user_id = $6 
+		    $2::BIGINT IS NULL 
+		    OR m.emp_id = $2 
 		)
 		AND (
-		    $7::VARCHAR IS NULL 
-		    OR body ILIKE $7
+		    $3::BIGINT IS NULL 
+		    OR m.room_id = $3
 		)
-		LIMIT $8
-		OFFSET $9
+		AND (
+		    $4::BIGINT IS NULL 
+		    OR m.target_id = $4
+		)
+		AND (
+		    $5::VARCHAR IS NULL 
+		    OR body ILIKE $5
+		)
+		LIMIT $6
+		OFFSET $7
 		`,
-		inp.ChatID,
+		inp.MsgID,
+		inp.EmpID,
 		inp.RoomID,
-		holder.RoleID,
-		holder.Char,
-		holder.MemberID,
-		inp.UserID,
+		inp.TargetID,
 		inp.TextFragment,
 		params.Limit,
 		params.Offset,
@@ -1042,30 +1058,20 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 		return nil, err
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		m := &model.Message{
-			Room: &model.Room{
-				Chat: &model.Chat{
-					Unit: &model.Unit{ID: inp.ChatID},
-				},
-			},
+			Room:     new(model.Room),
+			Employee: new(model.Employee),
 		}
 		var (
-			_replid *int
-			_userID *int
+			targetID *int
 		)
-		if err = rows.Scan(&m.ID, &_replid, &_userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&m.Room.RoomID, &m.MsgID, &m.Employee.EmpID, &targetID, &m.Body, &m.CreatedAt); err != nil {
 			return nil, err
 		}
-		if _replid != nil {
-			m.ReplyTo = &model.Message{
-				ID: *_replid,
-			}
-		}
-		if _userID != nil {
-			m.User = &model.User{
-				Unit: &model.Unit{ID: *_userID},
-			}
+		if targetID != nil {
+			m.TargetMsgID = &model.Message{MsgID: *targetID}
 		}
 		messages.Messages = append(messages.Messages, m)
 	}

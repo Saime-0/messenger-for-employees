@@ -5,11 +5,36 @@ package resolver
 
 import (
 	"context"
-	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/utils"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
 func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.TagsResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Tags", &bson.M{
+		"params": params,
+	})
+	defer node.MethodTiming()
+
+	var (
+	//clientID = utils.GetAuthDataFromCtx(ctx).UserID
+	)
+
+	if node.ValidParams(&params) {
+		return node.GetError(), nil
+	}
+
+	tags, err := r.Services.Repos.Chats.Tags(params)
+	if err != nil {
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
+	}
+
+	return tags, nil
 }

@@ -19,3 +19,8 @@ drop table rooms;
 drop type room_type;
 
 drop function unix_utc_now(bigint);
+
+drop function change_count_msg();
+
+drop function create_or_delete_count_msg_row();
+

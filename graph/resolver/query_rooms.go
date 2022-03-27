@@ -24,20 +24,17 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 	defer node.MethodTiming()
 
 	var (
-		chatID   = find.ChatID
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		rooms    *model.Rooms
 	)
 
 	if node.ValidParams(&params) ||
-		node.ValidID(chatID) ||
-		node.IsMember(clientID, chatID) ||
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
-		find.ParentID != nil && node.ValidID(*find.ParentID) {
+		find.Name != nil && node.ValidRoomName(*find.Name) {
 		return node.GetError(), nil
 	}
 
-	rooms, err := r.Services.Repos.Rooms.FindRooms(&find, params)
+	rooms, err := r.Services.Repos.Rooms.FindRooms(clientID, &find, params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil

@@ -95,3 +95,52 @@ create function unix_utc_now(bigint DEFAULT 0) returns bigint
 as $$
 SELECT (date_part('epoch'::text, now()))::bigint + $1
 $$;
+
+create function change_count_msg() returns trigger
+    language plpgsql
+as $$
+BEGIN
+    if tg_op = 'INSERT' then
+        update msg_count
+        set val = val + 1
+        where msg_count.room_id = new.room_id;
+        return new;
+    else if tg_op = 'DELETE' then
+        update msg_count
+        set val = val - 1
+        where msg_count.room_id = old.room_id;
+        return old;
+    end if;
+    end if;
+    raise exception 'operation could not be detected';
+end;
+$$;
+
+create trigger on_change_messages_table
+    after insert or delete
+    on messages
+    for each row
+execute procedure change_count_msg();
+
+create function create_or_delete_count_msg_row() returns trigger
+    language plpgsql
+as $$
+begin
+    if tg_op = 'INSERT' then
+        insert into msg_count (room_id) values (new.room_id);
+        return new;
+    else if tg_op = 'DELETE' then
+        delete from msg_count WHERE room_id = old.room_id;
+        return old;
+    end if;
+    end if;
+    raise exception 'operation could not be detected';
+end;
+$$;
+
+create trigger on_create_or_delete_room
+    after insert or delete
+    on rooms
+    for each row
+execute procedure create_or_delete_count_msg_row();
+

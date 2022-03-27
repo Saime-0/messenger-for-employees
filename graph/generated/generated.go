@@ -1065,7 +1065,7 @@ type Message {
     room: Room! @goField
     msgID: ID!
     employee: Employee! @goField
-    targetMsgID: ID @goField
+    targetMsgID: Message @goField
     body: String!
     createdAt: Int64!
 }
@@ -1283,7 +1283,7 @@ type NewMessage {
 	msgID: ID!
 	roomID: ID!
 	targetMsgID: ID
-	empID: ID
+	empID: ID!
 	body: String!
 	createdAt: Int64!
 }
@@ -2682,9 +2682,9 @@ func (ec *executionContext) _Message_targetMsgID(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.Message)
 	fc.Result = res
-	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_body(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -3191,11 +3191,14 @@ func (ec *executionContext) _NewMessage_empID(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMessage_body(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
@@ -7382,6 +7385,9 @@ func (ec *executionContext) _NewMessage(ctx context.Context, sel ast.SelectionSe
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "body":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._NewMessage_body(ctx, field, obj)
@@ -9602,6 +9608,13 @@ func (ec *executionContext) marshalOMessage2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhtt
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMessage(ctx context.Context, sel ast.SelectionSet, v *model.Message) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Message(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOParams2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐParams(ctx context.Context, v interface{}) (*model.Params, error) {

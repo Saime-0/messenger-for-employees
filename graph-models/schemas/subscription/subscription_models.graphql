@@ -8,7 +8,7 @@ type NewMessage {
 	msgID: ID!
 	roomID: ID!
 	targetMsgID: ID
-	empID: ID
+	empID: ID!
 	body: String!
 	createdAt: Int64!
 }

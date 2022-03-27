@@ -5,11 +5,69 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/piper"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/utils"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessageInput) (model.SendMsgResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("SendMsg", &bson.M{
+		"RoomID":      input.RoomID,
+		"TargetMsgID": input.TargetMsgID,
+	})
+	defer node.MethodTiming()
+
+	var (
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+	)
+
+	if node.RoomExists(input.RoomID) ||
+		node.IsMember(clientID, input.RoomID) ||
+		input.TargetMsgID != nil && node.MessageExists(input.RoomID, *input.TargetMsgID) {
+		return node.GetError(), nil
+	}
+
+	message := &models.CreateMessage{
+		TargetMsgID: input.TargetMsgID,
+		EmployeeID:  clientID,
+		RoomID:      input.RoomID,
+		Body:        input.Body,
+	}
+
+	eventReadyMessage, err := func(n piper.Node) (*model.NewMessage, error) {
+		n.SwitchMethod("CreateMessage", &bson.M{
+			"TargetMsgID": message.TargetMsgID,
+			"EmployeeID":  message.EmployeeID,
+			"RoomID":      message.RoomID,
+		})
+		defer n.MethodTiming()
+
+		return r.Services.Repos.Messages.CreateMessage(message)
+	}(node)
+
+	if err != nil {
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
+	}
+
+	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, TargetMsgID: _replyTo, EmployeeID:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
+	go func() {
+		err := r.Subix.NotifyRoomReaders(
+			input.RoomID,
+			eventReadyMessage,
+		)
+		if err != nil {
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		}
+	}()
+
+	return resp.Success("сообщение успешно создано"), nil
 }

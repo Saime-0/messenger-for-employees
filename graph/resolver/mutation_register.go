@@ -32,7 +32,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return node.GetError(), nil
 
 	}
-	expAt := time.Now().Unix() + rules.LiftimeOfRegistrationSession
+	expAt := time.Now().Unix() + rules.LifetimeOfRegistrationSession
 	code, err := r.Services.Repos.Users.CreateRegistrationSession(
 		&models.RegisterData{
 			Domain: input.Domain,

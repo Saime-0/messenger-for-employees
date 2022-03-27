@@ -309,8 +309,8 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Message.ReplyTo", &bson.M{
-		"obj.ReplyTo": obj.ReplyTo,
+	node.SwitchMethod("Message.TargetMsgID", &bson.M{
+		"obj.TargetMsgID": obj.ReplyTo,
 	})
 	defer node.MethodTiming()
 
@@ -318,7 +318,7 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 		return nil, nil // так и надо
 	}
 
-	//message, err := r.Services.Repos.Messages.Message(obj.ReplyTo.ID)
+	//message, err := r.Services.Repos.Messages.Message(obj.TargetMsgID.ID)
 	message, err := r.Dataloader.Message(obj.ReplyTo.ID)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))

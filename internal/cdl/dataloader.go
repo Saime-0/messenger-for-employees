@@ -17,7 +17,7 @@ type (
 
 type Dataloader struct {
 	wait             time.Duration
-	capactiyRequests RequestsCount
+	capacityRequests RequestsCount
 	categories       *Categories
 	db               *sql.DB
 	healer           *healer.Healer
@@ -26,7 +26,7 @@ type Dataloader struct {
 func NewDataloader(wait time.Duration, maxBatch RequestsCount, db *sql.DB, hlr *healer.Healer) *Dataloader {
 	d := &Dataloader{
 		wait:             wait,
-		capactiyRequests: maxBatch,
+		capacityRequests: maxBatch,
 		db:               db,
 		healer:           hlr,
 	}

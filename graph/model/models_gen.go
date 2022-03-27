@@ -178,7 +178,7 @@ type Message struct {
 	Room        *Room     `json:"room"`
 	MsgID       int       `json:"msgID"`
 	Employee    *Employee `json:"employee"`
-	TargetMsgID *int      `json:"targetMsgID"`
+	TargetMsgID *Message  `json:"targetMsgID"`
 	Body        string    `json:"body"`
 	CreatedAt   int64     `json:"createdAt"`
 }
@@ -200,7 +200,7 @@ type NewMessage struct {
 	MsgID       int    `json:"msgID"`
 	RoomID      int    `json:"roomID"`
 	TargetMsgID *int   `json:"targetMsgID"`
-	EmpID       *int   `json:"empID"`
+	EmpID       int    `json:"empID"`
 	Body        string `json:"body"`
 	CreatedAt   int64  `json:"createdAt"`
 }

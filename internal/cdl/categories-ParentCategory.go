@@ -34,7 +34,7 @@ type parentCategory struct {
 func (d *Dataloader) newParentCategory() *parentCategory {
 	c := &parentCategory{
 		Dataloader:             d,
-		RemainingRequestsCount: d.capactiyRequests,
+		RemainingRequestsCount: d.capacityRequests,
 		Requests:               map[chanPtr]*baseRequest{},
 		LoadFn: func() {
 			panic("not implemented")
@@ -66,7 +66,7 @@ func (c *parentCategory) runLoadFunc() {
 	for ptr := range c.Requests {
 		delete(c.Requests, ptr)
 	}
-	c.RemainingRequestsCount = c.Dataloader.capactiyRequests
+	c.RemainingRequestsCount = c.Dataloader.capacityRequests
 	c.Timer = nil
 	c.Unlock() // Unlock
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,21 +24,19 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
-		chatID   = find.ChatID
-		holder   models.AllowHolder
 		messages *model.Messages
 	)
 
 	if node.ValidParams(&params) ||
-		node.ValidID(chatID) ||
-		node.IsMember(clientID, chatID) ||
+		find.EmpID != nil && node.ValidID(*find.EmpID) ||
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
-		find.UserID != nil && node.ValidID(*find.UserID) ||
-		node.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
+		node.IsMember(clientID, *find.RoomID) ||
+		find.TargetID != nil && node.ValidID(*find.TargetID) ||
+		find.TextFragment != nil { // todo bodyfragment valid
 		return node.GetError(), nil
 	}
 
-	messages, err := r.Services.Repos.Chats.FindMessages(&find, params, &holder)
+	messages, err := r.Services.Repos.Chats.FindMessages(clientID, &find, params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
