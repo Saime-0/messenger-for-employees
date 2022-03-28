@@ -8,24 +8,24 @@ import (
 )
 
 type TokenData struct {
-	UserID    int   `json:"userid"`
-	ExpiresAt int64 `json:"exp"`
+	EmployeeID int   `json:"employeeid"`
+	ExpiresAt  int64 `json:"exp"`
 }
 
 func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 
 	var (
-		userID     int
-		expiresAt  int64
-		data       *TokenData
-		err        error
-		claims     *jwt.Claims
-		_userID    interface{}
-		_expiresAt interface{}
-		fuserID    float64
-		fexpiresAt float64
-		ok         bool
-		algorithm  jwt.Algorithm
+		employeeID  int
+		expiresAt   int64
+		data        *TokenData
+		err         error
+		claims      *jwt.Claims
+		_employeeID interface{}
+		_expiresAt  interface{}
+		femployeeID float64
+		fexpiresAt  float64
+		ok          bool
+		algorithm   jwt.Algorithm
 	)
 
 	algorithm = jwt.HmacSha256(secretKey)
@@ -38,7 +38,7 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 		goto handleError
 	}
 
-	_userID, err = claims.Get("userid")
+	_employeeID, err = claims.Get("employeeid")
 	if err != nil {
 		goto handleError
 	}
@@ -47,9 +47,9 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 		goto handleError
 	}
 
-	fuserID, ok = _userID.(float64)
+	femployeeID, ok = _employeeID.(float64)
 	if !ok {
-		err = cerrors.New("token not contain userid")
+		err = cerrors.New("token not contain employeeid")
 		goto handleError
 	}
 	fexpiresAt, ok = _expiresAt.(float64)
@@ -58,12 +58,12 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 		goto handleError
 	}
 
-	userID = int(fuserID)
+	employeeID = int(femployeeID)
 	expiresAt = int64(fexpiresAt)
 
 	data = &TokenData{
-		UserID:    userID,
-		ExpiresAt: expiresAt,
+		EmployeeID: employeeID,
+		ExpiresAt:  expiresAt,
 	}
 
 	return data, nil
@@ -76,7 +76,7 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 	algorithm := jwt.HmacSha256(secretKey)
 
 	claims := jwt.NewClaim()
-	claims.Set("userid", data.UserID)
+	claims.Set("employeeid", data.EmployeeID)
 	claims.Set("exp", data.ExpiresAt)
 
 	token, err := algorithm.Encode(claims)

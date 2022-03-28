@@ -18,11 +18,11 @@ type (
 	}
 )
 
-func (d *Dataloader) EmployeeIsRoomMember(userID, roomID int) (bool, error) {
+func (d *Dataloader) EmployeeIsRoomMember(employeeID, roomID int) (bool, error) {
 
 	res := <-d.categories.EmployeeIsRoomMember.addBaseRequest(
 		&EmployeeIsRoomMemberInp{
-			EmployeeID: userID,
+			EmployeeID: employeeID,
 			RoomID:     roomID,
 		},
 		new(EmployeeIsRoomMemberResult),

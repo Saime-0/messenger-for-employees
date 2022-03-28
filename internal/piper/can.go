@@ -20,8 +20,8 @@ func (n *Node) CanCreateInvite(uid, cid int) (fail bool) {
 	)
 }
 
-func (n *Node) CanBan(userID, targetID, chatID int) (fail bool) {
-	demoMembers := n.repos.Chats.DemoMembers(chatID, 0, userID, targetID)
+func (n *Node) CanBan(employeeID, targetID, chatID int) (fail bool) {
+	demoMembers := n.repos.Chats.DemoMembers(chatID, 0, employeeID, targetID)
 	return n.diffLevelCheck(
 		false,
 		false,

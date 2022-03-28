@@ -26,7 +26,7 @@ func (r *mutationResolver) EditListenEventCollection(ctx context.Context, sessio
 	})
 	defer node.MethodTiming()
 
-	clientID := utils.GetAuthDataFromCtx(ctx).UserID
+	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
 	var (
 		userMembers *[]*models.SubUser
 	)

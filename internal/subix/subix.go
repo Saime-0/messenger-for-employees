@@ -6,21 +6,21 @@ import (
 )
 
 type Subix struct {
-	chats   Chats
-	members Members
-	users   Users
-	clients Clients
-	repo    *repository.Repositories
-	sched   *scheduler.Scheduler
+	chats     Chats
+	rooms     Rooms
+	employees Employees
+	clients   Clients
+	repo      *repository.Repositories
+	sched     *scheduler.Scheduler
 }
 
 func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix {
 	return &Subix{
-		users:   Users{},
-		chats:   Chats{},
-		members: Members{},
-		clients: Clients{},
-		repo:    repo,
-		sched:   sched,
+		chats:     Chats{},
+		rooms:     Rooms{},
+		employees: Employees{},
+		clients:   Clients{},
+		repo:      repo,
+		sched:     sched,
 	}
 }

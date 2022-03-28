@@ -5,12 +5,12 @@ package resolver
 
 import (
 	"context"
+
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
 func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.TagsResult, error) {
@@ -23,7 +23,7 @@ func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.T
 	defer node.MethodTiming()
 
 	var (
-	//clientID = utils.GetAuthDataFromCtx(ctx).UserID
+	//clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.ValidParams(&params) {

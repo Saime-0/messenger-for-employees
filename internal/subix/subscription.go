@@ -14,7 +14,7 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64) (*Client, error) {
 
 	// websocket connection = сессия = клиент
 	client := &Client{
-		UserID:           userID,
+		EmployeeID:       userID,
 		Ch:               make(chan *model.SubscriptionBody),
 		sessionExpiresAt: expAt,
 		sessionKey:       sessionKey,
@@ -29,7 +29,7 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64) (*Client, error) {
 	}
 
 	// user
-	user := s.CreateUserIfNotExists(userID)
+	user := s.CreateEmployeeIfNotExists(userID)
 	user.clients[sessionKey] = client
 
 	return client, nil
@@ -42,7 +42,7 @@ func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, a
 	if !ok { // если ключ сущесивует, то по-хорошему клиент должен повторить соединение с другим ключем
 		return cerrors.New("no session with this key was found")
 	}
-	user := s.users[client.UserID]
+	user := s.employees[client.EmployeeID]
 	for _, event := range listenEvents {
 		if event == model.EventTypeAll {
 			listenEvents = allUsefulEventtypes
@@ -51,9 +51,9 @@ func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, a
 	}
 	if action == model.EventSubjectActionAdd { // если мемберс добавляет пачку событий
 		for _, sm := range submembers {
-			member := s.CreateMemberIfNotExists(*sm.MemberID, *sm.ChatID, user.ID) // достаем мембера из активных(те на которые подписаны клиенты) нужного мембера
-			clientWithEvents, ok := member.clientsWithEvents[sessionKey]           // ищем сессию нужного клиента в мемберсе
-			if !ok {                                                               // если клиент еще не прорслушивает этого участника, то заставляем сушать
+			member := s.CreateRoomIfNotExists(*sm.MemberID, *sm.ChatID)  // достаем мембера из активных(те на которые подписаны клиенты) нужного мембера
+			clientWithEvents, ok := member.clientsWithEvents[sessionKey] // ищем сессию нужного клиента в мемберсе
+			if !ok {                                                     // если клиент еще не прорслушивает этого участника, то заставляем сушать
 				clientWithEvents = &ClientWithEvents{
 					Client: client,
 					Events: make(EventCollection),
@@ -65,14 +65,14 @@ func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, a
 			}
 
 			// add member to user memberings
-			user.membering[*sm.MemberID] = member // даже если у пользователя уже есть мембер с таким id то все равно добавляем(не даст никакого эффекта)
+			user.rooms[*sm.MemberID] = member // даже если у пользователя уже есть мембер с таким id то все равно добавляем(не даст никакого эффекта)
 		}
 	}
 
 	if action == model.EventSubjectActionDelete {
 		for _, sm := range submembers {
 
-			member, ok := s.members[*sm.MemberID]
+			member, ok := s.rooms[*sm.MemberID]
 			if !ok {
 				continue // пропускаем если клиент не слушает этого участника
 			} else {
@@ -87,7 +87,7 @@ func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, a
 				if len(clientWithEvents.Events) == 0 { // если удалятся все события которые прослушывал клиент, то ..
 					delete(member.clientsWithEvents, sessionKey) // .. удаляем клиента из мемберса
 					if len(member.clientsWithEvents) == 0 {      // а если количесво слушающих клиентов = 0 то..
-						s.DeleteMember(*sm.MemberID) // удаляем мембера
+						s.DeleteRoom(*sm.MemberID) // удаляем мембера
 					}
 				}
 			}

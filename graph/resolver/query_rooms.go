@@ -24,8 +24,7 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 	defer node.MethodTiming()
 
 	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
-		rooms    *model.Rooms
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.ValidParams(&params) ||

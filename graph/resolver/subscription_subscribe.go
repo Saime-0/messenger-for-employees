@@ -35,7 +35,7 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 	}
 
 	client, err := r.Subix.Sub(
-		authData.UserID,
+		authData.EmployeeID,
 		sessionKey,
 		authData.ExpiresAt,
 	)

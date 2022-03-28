@@ -359,7 +359,7 @@ func (r *RoomsRepo) Allowed(action model.ActionType, roomID int, holder *models.
 		roomID,
 		holder.RoleID,
 		holder.Char,
-		holder.UserID,
+		holder.EmployeeID,
 		holder.MemberID,
 	).Scan(&yes)
 	if err != nil {
@@ -369,14 +369,14 @@ func (r *RoomsRepo) Allowed(action model.ActionType, roomID int, holder *models.
 	return
 }
 
-func (r *RoomsRepo) AllowHolder(userID, chatID int) (*models.AllowHolder, error) {
+func (r *RoomsRepo) AllowHolder(employeeID, chatID int) (*models.AllowHolder, error) {
 
 	holder := &models.AllowHolder{}
 	err := r.db.QueryRow(
 		`SELECT id, role_id, char
 		FROM chat_members
-		WHERE user_id = $1 AND chat_id = $2`,
-		userID,
+		WHERE employee_id = $1 AND chat_id = $2`,
+		employeeID,
 		chatID,
 	).Scan(
 		&holder.MemberID,
@@ -387,7 +387,7 @@ func (r *RoomsRepo) AllowHolder(userID, chatID int) (*models.AllowHolder, error)
 		println("AllowsHolder:", err.Error()) //debug
 		return nil, err
 	}
-	holder.UserID = userID
+	holder.EmployeeID = employeeID
 
 	return holder, err
 }
@@ -414,10 +414,12 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read
+		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id
 		FROM rooms r
 		JOIN members m 
 		    ON m.room_id = r.room_id AND m.emp_id = $1 
+		JOIN msg_state c 
+		    ON r.room_id = c.room_id
 		WHERE (
 			    $2::BIGINT IS NULL 
 			    OR r.room_id = $2 
@@ -439,9 +441,10 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 		return nil, err
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead); err != nil {
+		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
 			return nil, err
 		}
 

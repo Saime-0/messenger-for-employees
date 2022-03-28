@@ -42,7 +42,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	)
 
 	if node.UserExistsByRequisites(requisites) ||
-		node.GetUserIDByRequisites(requisites, &clientID) {
+		node.GetEmployeeIDByRequisites(requisites, &clientID) {
 		return node.GetError(), nil
 	}
 
@@ -63,8 +63,8 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
-			UserID:    clientID,
-			ExpiresAt: time.Now().Unix() + *r.Config.AccessTokenLiftime,
+			EmployeeID: clientID,
+			ExpiresAt:  time.Now().Unix() + *r.Config.AccessTokenLiftime,
 		},
 		r.Config.SecretSigningKey,
 	)

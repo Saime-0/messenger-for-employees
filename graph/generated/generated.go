@@ -169,6 +169,7 @@ type ComplexityRoot struct {
 	}
 
 	Room struct {
+		LastMessageID   func(childComplexity int) int
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
 		Name            func(childComplexity int) int
@@ -701,6 +702,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RemoveTagFromEmp.TagID(childComplexity), true
 
+	case "Room.lastMessageID":
+		if e.complexity.Room.LastMessageID == nil {
+			break
+		}
+
+		return e.complexity.Room.LastMessageID(childComplexity), true
+
 	case "Room.lastMessageRead":
 		if e.complexity.Room.LastMessageRead == nil {
 			break
@@ -1016,7 +1024,7 @@ type TokenPair {
 }
 
 type Employee {
-    empID: ID!
+    empID: RoomID!
     firstName: String!
     lastName: String!
     joinedAt: Int64!
@@ -1034,11 +1042,12 @@ type PersonalData {
 }
 
 type Room {
-    roomID: ID!
+    roomID: RoomID!
     name: String!
     view: RoomType!
     # for the client
-    lastMessageRead: ID!
+    lastMessageRead: RoomID!
+    lastMessageID: RoomID!
     members: Members! @goField
 }
 type Rooms {
@@ -1054,7 +1063,7 @@ type Members {
 }
 
 type Tag {
-    tagID: ID!
+    tagID: RoomID!
     name: String!
 }
 type Tags {
@@ -1063,7 +1072,7 @@ type Tags {
 
 type Message {
     room: Room! @goField
-    msgID: ID!
+    msgID: RoomID!
     employee: Employee! @goField
     targetMsgID: Message @goField
     body: String!
@@ -1086,7 +1095,7 @@ type ListenCollection {
 }
 
 type ListenedChat {
-    id: ID!
+    id: RoomID!
     events: [EventType!]!
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/inputs.graphql", Input: `input LoginInput {
@@ -1100,31 +1109,31 @@ input RegisterInput {
     password: String!
 }
 input CreateMessageInput {
-    roomID: ID!
-    targetMsgID: ID
+    roomID: RoomID!
+    targetMsgID: RoomID
     body: String!
 }
 
 input FindEmployees {
-    empID: ID
-    roomID: ID
-    tagID: ID
+    empID: RoomID
+    roomID: RoomID
+    tagID: RoomID
     name: String
 }
 
 # возвращает в обратном хронологическом порядке
 input FindMessages {
-    msgID: ID
-    empID: ID
-    roomID: ID
-    targetID: ID
+    msgID: RoomID
+    empID: RoomID
+    roomID: RoomID
+    targetID: RoomID
     textFragment: String
 }
 
 # возвращает в обратном хронологическом порядке
 # если равно 0 то началом будет считаться самое новое сообщение
 #input FindMessagesInRoom {
-#    startMessageId: ID!
+#    startMessageId: RoomID!
 #    created: MessagesCreated!
 #    count: Int!
 #}
@@ -1134,7 +1143,7 @@ input FindMessages {
 #}
 
 input FindRooms {
-    roomID: ID
+    roomID: RoomID
     name: String
 }
 
@@ -1267,7 +1276,7 @@ extend type Mutation {
 	editListenEventCollection(
 		sessionKey: String!,
 		action: EventSubjectAction!
-		targetChats: [ID!]!
+		targetChats: [RoomID!]!
 		listenEvents: [EventType!]!
 	): EditListenEventCollectionResult! @goField @isAuth
 }
@@ -1280,72 +1289,72 @@ extend type Mutation {
 }
 
 type NewMessage {
-	msgID: ID!
-	roomID: ID!
-	targetMsgID: ID
-	empID: ID!
+	msgID: RoomID!
+	roomID: RoomID!
+	targetMsgID: RoomID
+	empID: RoomID!
 	body: String!
 	createdAt: Int64!
 }
 
 type UpdateEmpFirstName {
-	empID: ID!
+	empID: RoomID!
 	val: String!
 }
 
 type UpdateEmpLastName {
-	empID: ID!
+	empID: RoomID!
 	val: String!
 }
 
 type GiveTagToEmp {
-	empID: ID!
-	tagsID: [ID!]
+	empID: RoomID!
+	tagsID: [RoomID!]
 }
 
 type TakeTagFromEmp {
-	empID: ID!
-	tagsID: [ID!]
+	empID: RoomID!
+	tagsID: [RoomID!]
 }
 
 type RemoveTagFromEmp {
-	empID: ID!
-	tagID: ID!
+	empID: RoomID!
+	tagID: RoomID!
 }
 
 type NewMember {
-	empID: ID!
-	roomsID: [ID!]
+	empID: RoomID!
+	roomsID: [RoomID!]
 }
 
 type RemoveMember {
-	empID: ID!
-	roomID: ID!
+	empID: RoomID!
+	roomID: RoomID!
 }
 
 type CreateTag {
-	tagID: ID!
+	tagID: RoomID!
 	name: String!
 #	color: HexColor!
 }
 
 type UpdateTag {
-	tagID: ID!
+	tagID: RoomID!
 	name: String!
 }
 
 type DeleteTag {
-	tagID: [ID!]
+	tagID: [RoomID!]
 }
 
 type UpdateRoomName {
-	roomID: ID!
+	roomID: RoomID!
 	name: String!
 }
 
 
 type DeleteRoom {
-	roomsID: [ID!]
+	roomsID: [RoomID!]
 }
 
 
@@ -4014,6 +4023,41 @@ func (ec *executionContext) _Room_lastMessageRead(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.LastMessageRead, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_lastMessageID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastMessageID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7754,6 +7798,16 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 		case "lastMessageRead":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_lastMessageRead(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastMessageID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Room_lastMessageID(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

@@ -47,7 +47,7 @@ func (c *parentCategory) message() {
 		SELECT ptr, 
 		       coalesce(id, 0), 
 		       coalesce(reply_to, 0), 
-		       coalesce(user_id, 0), 
+		       coalesce(employee_id, 0), 
 		       coalesce(room_id, 0), 
 		       coalesce(body, ''), 
 		       coalesce(type, 'USER'),
@@ -66,14 +66,14 @@ func (c *parentCategory) message() {
 	defer rows.Close()
 
 	var ( // каждую итерацию будем менять значения
-		ptr     chanPtr
-		replyTo *int
-		userID  *int
+		ptr        chanPtr
+		replyTo    *int
+		employeeID *int
 	)
 	for rows.Next() {
 		m := &model.Message{Room: new(model.Room)}
 
-		if err = rows.Scan(&ptr, &m.ID, &replyTo, &userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&ptr, &m.ID, &replyTo, &employeeID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
 			//c.Dataloader.healer.Alert("message (scan rows):" + err.Error())
 			c.Error = err
 			return
@@ -85,9 +85,9 @@ func (c *parentCategory) message() {
 		if replyTo != nil {
 			m.ReplyTo = &model.Message{ID: *replyTo}
 		}
-		if userID != nil {
+		if employeeID != nil {
 			m.User = &model.User{
-				Unit: &model.Unit{ID: *userID},
+				Unit: &model.Unit{ID: *employeeID},
 			}
 		}
 

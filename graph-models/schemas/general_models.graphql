@@ -50,6 +50,7 @@ type Room {
     view: RoomType!
     # for the client
     lastMessageRead: ID!
+    lastMessageID: ID!
     members: Members! @goField
 }
 type Rooms {

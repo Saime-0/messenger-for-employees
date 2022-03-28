@@ -8,7 +8,7 @@ import (
 
 func (s *Subix) informMembers(membersID []int, body model.EventResult) {
 	for _, memberID := range membersID {
-		member, ok := s.members[memberID]
+		member, ok := s.rooms[memberID]
 		if !ok {
 			continue
 		}
@@ -45,7 +45,7 @@ func (s *Subix) informChat(chatsID []int, body model.EventResult) {
 func (s *Subix) writeToUsers(usersID []int, body model.EventResult) {
 	eventType := getEventTypeByEventResult(body)
 	for _, userID := range usersID {
-		user, ok := s.users[userID]
+		user, ok := s.employees[userID]
 		if !ok {
 			continue
 		}
@@ -85,7 +85,7 @@ func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
 	case (*client).Ch <- subbody: // success
 	default: // client chan is close
 		if client != nil {
-			s.deleteClient(client.sessionKey)
+			defer s.deleteClient(client.sessionKey)
 		}
 	}
 }
@@ -106,38 +106,30 @@ func getEventTypeByEventResult(body model.EventResult) model.EventType {
 	switch body.(type) {
 	case *model.NewMessage:
 		return model.EventTypeNewMessage
-	case *model.UpdateUser:
-		return model.EventTypeUpdateUser
-	case *model.CreateMember:
-		return model.EventTypeCreateMember
-	case *model.UpdateMember:
-		return model.EventTypeUpdateMember
-	case *model.DeleteMember:
-		return model.EventTypeDeleteMember
-	case *model.CreateRole:
-		return model.EventTypeCreateRole
-	case *model.UpdateRole:
-		return model.EventTypeUpdateRole
-	case *model.DeleteRole:
-		return model.EventTypeDeleteRole
-	case *model.UpdateForm:
-		return model.EventTypeUpdateForm
-	case *model.CreateAllows:
-		return model.EventTypeCreateAllows
-	case *model.DeleteAllow:
-		return model.EventTypeDeleteAllow
-	case *model.UpdateChat:
-		return model.EventTypeUpdateChat
-	case *model.CreateRoom:
-		return model.EventTypeCreateRoom
-	case *model.UpdateRoom:
-		return model.EventTypeUpdateRoom
+	case *model.UpdateEmpFirstName:
+		return model.EventTypeUpdateEmpFirstName
+	case *model.UpdateEmpLastName:
+		return model.EventTypeUpdateEmpLastName
+	case *model.GiveTagToEmp:
+		return model.EventTypeGiveTagToEmp
+	case *model.TakeTagFromEmp:
+		return model.EventTypeTakeTagFromEmp
+	case *model.RemoveTagFromEmp:
+		return model.EventTypeRemoveTagFromEmp
+	case *model.NewMember:
+		return model.EventTypeNewMember
+	case *model.RemoveMember:
+		return model.EventTypeRemoveMember
+	case *model.CreateTag:
+		return model.EventTypeCreateTag
+	case *model.UpdateTag:
+		return model.EventTypeUpdateTag
+	case *model.DeleteTag:
+		return model.EventTypeDeleteTag
+	case *model.UpdateRoomName:
+		return model.EventTypeUpdateRoomName
 	case *model.DeleteRoom:
 		return model.EventTypeDeleteRoom
-	case *model.CreateInvite:
-		return model.EventTypeCreateInvite
-	case *model.DeleteInvite:
-		return model.EventTypeDeleteInvite
 	case *model.TokenExpired:
 		return model.EventTypeTokenExpired
 	default:

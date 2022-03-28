@@ -244,6 +244,7 @@ type Room struct {
 	Name            string   `json:"name"`
 	View            RoomType `json:"view"`
 	LastMessageRead int      `json:"lastMessageRead"`
+	LastMessageID   int      `json:"lastMessageID"`
 	Members         *Members `json:"members"`
 }
 

@@ -73,7 +73,7 @@ func (r *SubscribersRepo) initFuncs() {
 						    OR group_type = 'CHAR' AND value = m.char::VARCHAR 
 						    OR group_type = 'MEMBER' AND value = m.id::VARCHAR
 						)
-				   	OR m.user_id = c.owner_id
+				   	OR m.employee_id = c.owner_id
 				)
 			GROUP BY m.id`,
 			pq.Array(roomIDs),

@@ -18,8 +18,8 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 }
 
 func (r *UsersRepo) CreateUser(userModel *models.RegisterData) (err error) {
-	err = r.db.QueryRow(
-		`WITH u AS (
+	err = r.db.QueryRow(`
+		WITH u AS (
 			INSERT INTO units (domain, name, type) 
 			VALUES ($1, $2, 'USER') 
 			RETURNING id
@@ -38,7 +38,7 @@ func (r *UsersRepo) CreateUser(userModel *models.RegisterData) (err error) {
 }
 
 // deprecated
-func (r *UsersRepo) User(userID int) (*model.User, error) {
+func (r *UsersRepo) User(employeeID int) (*model.User, error) {
 	user := &model.User{
 		Unit: new(model.Unit),
 	}
@@ -46,7 +46,7 @@ func (r *UsersRepo) User(userID int) (*model.User, error) {
 		SELECT id, domain, name, type
 		FROM units
 		WHERE id = $1`,
-		userID,
+		employeeID,
 	).Scan(
 		&user.Unit.ID,
 		&user.Unit.Domain,
@@ -72,7 +72,7 @@ func (r *UsersRepo) UserExistsByRequisites(inp *models.LoginRequisites) (exists 
 
 }
 
-func (r *UsersRepo) GetUserIdByRequisites(inp *models.LoginRequisites) (id int, err error) {
+func (r *UsersRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (id int, err error) {
 	err = r.db.QueryRow(`
 		SELECT units.id
 		FROM units INNER JOIN users 
@@ -86,8 +86,8 @@ func (r *UsersRepo) GetUserIdByRequisites(inp *models.LoginRequisites) (id int, 
 }
 
 func (r *UsersRepo) GetUserByDomain(domain string) (user models.UserInfo, err error) {
-	err = r.db.QueryRow(
-		`SELECT units.id,units.domain,units.name
+	err = r.db.QueryRow(`
+		SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.domain = $1`,
@@ -104,8 +104,8 @@ func (r *UsersRepo) GetUserByDomain(domain string) (user models.UserInfo, err er
 }
 
 func (r *UsersRepo) GetUserByID(id int) (user models.UserInfo, err error) {
-	err = r.db.QueryRow(
-		`SELECT units.id,units.domain,units.name
+	err = r.db.QueryRow(`
+		SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
@@ -121,32 +121,32 @@ func (r *UsersRepo) GetUserByID(id int) (user models.UserInfo, err error) {
 	return
 }
 
-func (r *UsersRepo) GetCountUserOwnedChats(userID int) (count int, err error) {
-	err = r.db.QueryRow(
-		`SELECT count(*)
+func (r *UsersRepo) GetCountUserOwnedChats(employeeID int) (count int, err error) {
+	err = r.db.QueryRow(`
+		SELECT count(*)
 		FROM chats 
 		WHERE owner_id = $1`,
-		userID,
+		employeeID,
 	).Scan(&count)
 	return
 }
 
-func (r *UsersRepo) UserExistsByID(userID int) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
+func (r *UsersRepo) UserExistsByID(employeeID int) (exists bool) {
+	r.db.QueryRow(`
+		SELECT EXISTS(
 			SELECT 1
 			FROM users
 			WHERE id = $1
 		)`,
-		userID,
+		employeeID,
 	).Scan(&exists)
 
 	return
 }
 
 func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
+	r.db.QueryRow(`
+		SELECT EXISTS(
 			SELECT 1
 			FROM units
 			INNER JOIN users
@@ -192,7 +192,7 @@ func (r *UsersRepo) Me(empID int) (*model.Me, error) {
 	return me, err
 }
 
-func (r *UsersRepo) OwnedChats(userID int) (*model.Chats, error) {
+func (r *UsersRepo) OwnedChats(employeeID int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
@@ -201,7 +201,7 @@ func (r *UsersRepo) OwnedChats(userID int) (*model.Chats, error) {
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE chats.owner_id = $1`,
-		userID,
+		employeeID,
 	)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -221,7 +221,7 @@ func (r *UsersRepo) OwnedChats(userID int) (*model.Chats, error) {
 	return chats, nil
 }
 
-func (r *UsersRepo) Chats(userID int) (*model.Chats, error) {
+func (r *UsersRepo) Chats(employeeID int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
@@ -232,8 +232,8 @@ func (r *UsersRepo) Chats(userID int) (*model.Chats, error) {
 			ON units.id = chats.id 
 		INNER JOIN chat_members
 			ON units.id = chat_members.chat_id
-		WHERE chat_members.user_id = $1`,
-		userID,
+		WHERE chat_members.employee_id = $1`,
+		employeeID,
 	)
 	if err != nil {
 		return nil, err
@@ -252,12 +252,12 @@ func (r *UsersRepo) Chats(userID int) (*model.Chats, error) {
 
 	return chats, nil
 }
-func (r *UsersRepo) ChatsID(userID int) ([]int, error) {
+func (r *UsersRepo) ChatsID(employeeID int) ([]int, error) {
 	rows, err := r.db.Query(
 		`SELECT chat_id
 		FROM chat_members
-		WHERE user_id = $1`,
-		userID,
+		WHERE employee_id = $1`,
+		employeeID,
 	)
 	if err != nil {
 		return nil, err
@@ -328,7 +328,7 @@ func (r *UsersRepo) FindEmployees(inp *model.FindEmployees) (*model.Employees, e
 	return users, nil
 }
 
-func (r UsersRepo) UpdateMe(userID int, inp *model.UpdateMeDataInput) (*model.UpdateUser, error) {
+func (r UsersRepo) UpdateMe(employeeID int, inp *model.UpdateMeDataInput) (*model.UpdateUser, error) {
 	unit := &model.UpdateUser{}
 	err := r.db.QueryRow(`
 		WITH u AS (
@@ -347,7 +347,7 @@ func (r UsersRepo) UpdateMe(userID int, inp *model.UpdateMeDataInput) (*model.Up
 		WHERE id = $1
 		RETURNING id, u.domain, u.name
 		`,
-		userID,
+		employeeID,
 		inp.Name,
 		inp.Domain,
 		inp.Password,

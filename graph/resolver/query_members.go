@@ -24,7 +24,7 @@ func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (mo
 
 	var (
 		chatID   int
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 		members  *model.Members
 	)
 

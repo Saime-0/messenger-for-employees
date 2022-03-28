@@ -19,7 +19,7 @@ func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	node.SwitchMethod("Me", nil)
 	defer node.MethodTiming()
 
-	clientID := utils.GetAuthDataFromCtx(ctx).UserID
+	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
 	me, err := r.Services.Repos.Users.Me(clientID)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))

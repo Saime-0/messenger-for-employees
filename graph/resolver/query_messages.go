@@ -23,8 +23,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 	defer node.MethodTiming()
 
 	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
-		messages *model.Messages
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.ValidParams(&params) ||
@@ -32,7 +31,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
 		node.IsMember(clientID, *find.RoomID) ||
 		find.TargetID != nil && node.ValidID(*find.TargetID) ||
-		find.TextFragment != nil { // todo bodyfragment valid
+		find.TextFragment != nil { // todo text valid
 		return node.GetError(), nil
 	}
 

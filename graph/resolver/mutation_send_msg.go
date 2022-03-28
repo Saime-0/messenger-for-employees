@@ -26,7 +26,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 	defer node.MethodTiming()
 
 	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.RoomExists(input.RoomID) ||
@@ -58,7 +58,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
-	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, TargetMsgID: _replyTo, EmployeeID:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
+	//r.Services.Events.NewMessage(roomID, &model.Message{RoomID:      msgID, TargetMsgID: _replyTo, EmployeeID:  &model.Member{RoomID: memberID}, Type:    message.Type, Body:    input.Body})
 	go func() {
 		err := r.Subix.NotifyRoomReaders(
 			input.RoomID,

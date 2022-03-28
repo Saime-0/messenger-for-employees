@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
-type Users map[ID]*User
+type Employees map[ID]*Employee
 
-type User struct {
-	ID        int
-	membering Members
-	clients   Clients
+type Employee struct {
+	EmpID   int
+	rooms   Rooms
+	clients Clients
 }
 
 type Clients map[Key]*Client
 type ClientsWithEvents map[Key]*ClientWithEvents
 
 type Client struct {
-	UserID int
+	EmployeeID int
 	//ExpectedEvents   map[model.EventType]bool
 	Ch               chan *model.SubscriptionBody
 	task             *scheduler.Task
@@ -35,32 +35,45 @@ type ClientWithEvents struct {
 	Events EventCollection
 }
 
-func (s *Subix) CreateUserIfNotExists(userID int) *User {
-	user, ok := s.users[userID]
+func (s *Subix) CreateEmployeeIfNotExists(empID int) *Employee {
+	emp, ok := s.employees[empID]
 	if !ok {
-		user = &User{
-			ID:        userID,
-			membering: Members{},
-			clients:   Clients{},
+		emp = &Employee{
+			EmpID:   empID,
+			rooms:   Rooms{},
+			clients: Clients{},
 		}
-		s.users[userID] = user
+		s.employees[empID] = emp
 	}
-	return user
+	return emp
 }
 
-func (s *Subix) deleteUser(userID int) {
-	user, ok := s.users[userID]
-	if ok { // если вдруг не удается найти то просто скипаем
-		delete(s.users, userID)               // удаление из глобальной мапы
-		for _, client := range user.clients { // определяем тех клиентов которых надо удалить отовсюду
-			delete(s.clients, client.sessionKey) // удлаение из глобальной мапы
+func (s *Subix) deleteEmployee(empID int) {
+	emp, ok := s.employees[empID]
+	if ok { // если вдруг не удается найти, то просто пропускаем
+		delete(s.employees, empID)           // удаление из глобальной мапы
+		for _, client := range emp.clients { // определяем тех клиентов которых надо удалить из глобальной мапы
+			delete(s.clients, client.sessionKey) // удаление
 		}
-		user.clients = nil // на всякий случай заnullяем мапу
 
-		for _, member := range user.membering { // а здесь определяем мемберов, к которые относятся к пользователю
-			s.DeleteMember(member.ID) // удаляем по отдельности через функцию
+		for _, room := range emp.rooms { // а здесь определяем мемберов, к которым относятся к пользователю
+
+			delete(room.Empls, empID)
+
+			if len(room.Empls) == 0 {
+				s.DeleteRoom(room.RoomID) // удаляем по отдельности через функцию
+			} else {
+				for _, client := range emp.clients {
+					delete(room.clientsWithEvents, client.sessionKey)
+					if len(room.clientsWithEvents) == 0 {
+						s.DeleteRoom(room.RoomID)
+					}
+				}
+			}
+
 		}
-		user.membering = nil // на всякий случай заnullяем мапу
+		emp.clients = nil
+		//emp.rooms = nil // на всякий случай заnullяем мапу
 		// теперь на этого пользователя не должно остаться ссылок как и на его клиентов
 	}
 
@@ -74,20 +87,31 @@ func (s *Subix) deleteClient(sessionKey Key) error {
 		if err != nil {
 			return cerrors.Wrap(err, "не удалось удалить клиента")
 		}
-		close(client.Ch)
+		select {
+		case x, ok := <-client.Ch:
+			if ok {
+				select {
+				case client.Ch <- x:
+				default:
+				}
+				close(client.Ch)
+			}
+		default:
+			close(client.Ch)
+		}
 
-		user, ok := s.users[client.UserID]
+		emp, ok := s.employees[client.EmployeeID]
 		if ok {
-			delete(user.clients, client.sessionKey)
-			if len(user.clients) == 0 {
-				s.deleteUser(user.ID)
+			delete(emp.clients, client.sessionKey)
+			if len(emp.clients) == 0 {
+				s.deleteEmployee(emp.EmpID)
 			}
 		}
 
-		for _, member := range user.membering {
-			delete(member.clientsWithEvents, client.sessionKey)
-			if len(member.clientsWithEvents) == 0 {
-				s.DeleteMember(member.ID)
+		for _, room := range emp.rooms {
+			delete(room.clientsWithEvents, client.sessionKey)
+			if len(room.clientsWithEvents) == 0 {
+				s.DeleteRoom(room.RoomID)
 			}
 		}
 	}
@@ -125,8 +149,7 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 func (s *Subix) scheduleExpiredClient(client *Client) (err error) {
 	client.task, err = s.sched.AddTask(
 		func() {
-			//fmt.Printf("клиент %s не обновил токен, удаляю", client.sessionKey)
-			s.deleteClient(client.sessionKey)
+			s.deleteClient(client.sessionKey) // клиент не обновил токен, удаляем его
 		},
 		time.Now().Unix()+rules.LifetimeOfMarkedClient,
 	)
@@ -148,15 +171,15 @@ func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
 		return err
 	}
 	client.marked = false
-	//println("сессия продлена клиента", client)
+	// сессия успешно продлена
 	return nil
 }
 
 func (s Subix) ClientCollection(sessionKey Key) (collection []*model.ListenedChat) {
-	client, _ := s.clients[sessionKey]                        // предполагается что сессия с таким ключем существует
-	for _, member := range s.users[client.UserID].membering { // по мемберсам пользователя
-		listenedChat := &model.ListenedChat{ID: member.ChatID}
-		for event, _ := range member.clientsWithEvents[sessionKey].Events {
+	client, _ := s.clients[sessionKey]                          // предполагается что сессия с таким ключом существует
+	for _, room := range s.employees[client.EmployeeID].rooms { // по комнатам пользователя
+		listenedChat := &model.ListenedChat{ID: room.RoomID}
+		for event := range room.clientsWithEvents[sessionKey].Events {
 			listenedChat.Events = append(listenedChat.Events, event)
 		}
 		collection = append(collection, listenedChat)

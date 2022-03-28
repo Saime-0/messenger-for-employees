@@ -36,13 +36,16 @@ create table rooms
     primary key (room_id)
 );
 
-create table msg_count
+create table msg_state
 (
     room_id bigint not null,
-    val bigint default 0 not null,
-    primary key (room_id),
-    foreign key (room_id) references rooms
-        on delete cascade
+    msg_count bigint default 0 not null,
+    last_msg_id bigint default 0 not null,
+    constraint msg_count_pkey
+        primary key (room_id),
+    constraint msg_count_room_id_fkey
+        foreign key (room_id) references rooms
+            on delete cascade
 );
 
 create table members
@@ -101,14 +104,24 @@ create function change_count_msg() returns trigger
 as $$
 BEGIN
     if tg_op = 'INSERT' then
-        update msg_count
-        set val = val + 1
-        where msg_count.room_id = new.room_id;
+        update msg_state
+        set
+            msg_count = msg_count + 1,
+            last_msg_id = new.msg_id
+        where msg_state.room_id = new.room_id;
         return new;
     else if tg_op = 'DELETE' then
-        update msg_count
-        set val = val - 1
-        where msg_count.room_id = old.room_id;
+        update msg_state
+        set
+            msg_count = msg_count - 1,
+            last_msg_id = (
+                select m.msg_id
+                from messages m
+                where m.room_id = old.room_id
+                order by m.msg_id desc
+                limit 1
+            )
+        where msg_state.room_id = old.room_id;
         return old;
     end if;
     end if;
@@ -127,10 +140,10 @@ create function create_or_delete_count_msg_row() returns trigger
 as $$
 begin
     if tg_op = 'INSERT' then
-        insert into msg_count (room_id) values (new.room_id);
+        insert into msg_state (room_id) values (new.room_id);
         return new;
     else if tg_op = 'DELETE' then
-        delete from msg_count WHERE room_id = old.room_id;
+        delete from msg_state WHERE room_id = old.room_id;
         return old;
     end if;
     end if;
@@ -144,3 +157,21 @@ create trigger on_create_or_delete_room
     for each row
 execute procedure create_or_delete_count_msg_row();
 
+create function replace_msg_id() returns trigger
+    language plpgsql
+as $$
+BEGIN
+    new.msg_id = (
+        SELECT m.last_msg_id+1
+        FROM msg_state m
+        WHERE m.room_id = new.room_id
+    );
+    return new;
+end;
+$$;
+
+create trigger on_insert_message
+    before insert
+    on messages
+    for each row
+execute procedure replace_msg_id();

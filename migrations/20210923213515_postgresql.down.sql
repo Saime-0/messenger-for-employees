@@ -1,6 +1,6 @@
 drop table admins;
 
-drop table msg_count;
+drop table msg_state;
 
 drop table members;
 
@@ -23,4 +23,6 @@ drop function unix_utc_now(bigint);
 drop function change_count_msg();
 
 drop function create_or_delete_count_msg_row();
+
+drop function replace_msg_id();
 

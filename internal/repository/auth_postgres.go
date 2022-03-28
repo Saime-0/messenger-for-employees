@@ -18,12 +18,12 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	}
 }
 
-func (r *AuthRepo) CreateRefreshSession(userID int, sessionModel *models.RefreshSession, overflowDelete bool) (id int, err error) {
+func (r *AuthRepo) CreateRefreshSession(employeeID int, sessionModel *models.RefreshSession, overflowDelete bool) (id int, err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
+		INSERT INTO refresh_sessions (employee_id, refresh_token, user_agent, expires_at)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id`,
-		userID,
+		employeeID,
 		sessionModel.RefreshToken,
 		sessionModel.UserAgent,
 		sessionModel.ExpAt,
@@ -35,7 +35,7 @@ func (r *AuthRepo) CreateRefreshSession(userID int, sessionModel *models.Refresh
 	}
 
 	if overflowDelete {
-		err = r.OverflowDelete(userID, rules.MaxRefreshSession)
+		err = r.OverflowDelete(employeeID, rules.MaxRefreshSession)
 		if err != nil {
 			return
 		}
@@ -46,7 +46,7 @@ func (r *AuthRepo) CreateRefreshSession(userID int, sessionModel *models.Refresh
 
 func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.RefreshSession) (err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
+		INSERT INTO refresh_sessions (employee_id, refresh_token, user_agent, expires_at)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id`,
 		sessionID,
@@ -58,24 +58,24 @@ func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.Refr
 	return
 }
 
-func (r *AuthRepo) OverflowDelete(userID, limit int) (err error) {
+func (r *AuthRepo) OverflowDelete(employeeID, limit int) (err error) {
 	err = r.db.QueryRow(`
 		DELETE FROM refresh_sessions 
 		WHERE id IN(                 
 		    WITH session_count AS (
 		        SELECT count(1) AS val
 				FROM refresh_sessions
-				WHERE user_id = $1
-		        GROUP BY user_id
+				WHERE employee_id = $1
+		        GROUP BY employee_id
 		    )
 		    SELECT id
 		    FROM refresh_sessions 
-		    WHERE coalesce((select val from session_count) > $2, false) = true AND user_id = $1
+		    WHERE coalesce((select val from session_count) > $2, false) = true AND employee_id = $1
 		    ORDER BY id ASC 
 		    LIMIT abs((select val from session_count) - $2)
 		    
 		    )`,
-		userID,
+		employeeID,
 		limit,
 	).Err()
 	if err != nil {
@@ -85,15 +85,15 @@ func (r *AuthRepo) OverflowDelete(userID, limit int) (err error) {
 	return
 }
 
-func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userID int, err error) {
+func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, employeeID int, err error) {
 	err = r.db.QueryRow(`
-		SELECT id, user_id
+		SELECT id, employee_id
 		FROM refresh_sessions
 		WHERE refresh_token = $1`,
 		token,
 	).Scan(
 		&sessionId,
-		&userID,
+		&employeeID,
 	)
 
 	return

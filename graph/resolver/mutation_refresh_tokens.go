@@ -53,8 +53,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	tokenExpiresAt := kit.After(*r.Config.AccessTokenLiftime)
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
-			UserID:    clientID,
-			ExpiresAt: tokenExpiresAt,
+			EmployeeID: clientID,
+			ExpiresAt:  tokenExpiresAt,
 		},
 		r.Config.SecretSigningKey,
 	)

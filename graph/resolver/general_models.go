@@ -20,12 +20,12 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Owner", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 		chatID   = obj.Unit.ID
 	)
 
@@ -47,13 +47,13 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Rooms", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -74,13 +74,13 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Members", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -100,13 +100,13 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Roles", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -126,13 +126,13 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Invites", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) ||
@@ -154,13 +154,13 @@ func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.User
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Banlist", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) ||
@@ -182,13 +182,13 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Chat.Me", &bson.M{
-		"chatID (obj.Unit.ID)": obj.Unit.ID,
+		"chatID (obj.Unit.RoomID)": obj.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -216,7 +216,7 @@ func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, er
 	node.SwitchMethod("Me.Chats", nil)
 	defer node.MethodTiming()
 
-	clientID := utils.GetAuthDataFromCtx(ctx).UserID
+	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
 
 	chats, err := r.Services.Repos.Users.Chats(clientID)
 	if err != nil {
@@ -234,7 +234,7 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chat
 	node.SwitchMethod("Me.OwnedChats", nil)
 	defer node.MethodTiming()
 
-	clientID := utils.GetAuthDataFromCtx(ctx).UserID
+	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
 
 	chats, err := r.Services.Repos.Users.OwnedChats(clientID)
 	if err != nil {
@@ -250,7 +250,7 @@ func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Ch
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Member.Chat", &bson.M{
-		"chatID (obj.Chat.Unit.ID)": obj.Chat.Unit.ID,
+		"chatID (obj.Chat.Unit.RoomID)": obj.Chat.Unit.ID,
 	})
 	defer node.MethodTiming()
 
@@ -270,7 +270,7 @@ func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.Rol
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Member.Role", &bson.M{
-		"memberID (obj.ID)": obj.Chat.Unit.ID,
+		"memberID (obj.RoomID)": obj.Chat.Unit.ID,
 	})
 	defer node.MethodTiming()
 
@@ -318,7 +318,7 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 		return nil, nil // так и надо
 	}
 
-	//message, err := r.Services.Repos.Messages.Message(obj.TargetMsgID.ID)
+	//message, err := r.Services.Repos.Messages.Message(obj.TargetMsgID.RoomID)
 	message, err := r.Dataloader.Message(obj.ReplyTo.ID)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
@@ -341,9 +341,9 @@ func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.
 		return nil, nil // так и надо
 	}
 
-	userID := obj.User.Unit.ID
+	employeeID := obj.User.Unit.ID
 
-	user, err := r.Dataloader.User(userID)
+	user, err := r.Dataloader.User(employeeID)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
@@ -357,7 +357,7 @@ func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, 
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Room.Chat", &bson.M{
-		"chatID (obj.Chat.Unit.ID)": obj.Chat.Unit.ID,
+		"chatID (obj.Chat.Unit.RoomID)": obj.Chat.Unit.ID,
 	})
 	defer node.MethodTiming()
 
@@ -376,14 +376,14 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Room.Form", &bson.M{
-		"roomID (obj.RoomID)":       obj.RoomID,
-		"chatID (obj.Chat.Unit.ID)": obj.Chat.Unit.ID,
+		"roomID (obj.RoomID)":           obj.RoomID,
+		"chatID (obj.Chat.Unit.RoomID)": obj.Chat.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
 		roomID   = obj.RoomID
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 		chatID   = obj.Chat.Unit.ID
 		holder   models.AllowHolder
 	)
@@ -423,13 +423,13 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Room.Messages", &bson.M{
-		"roomID (obj.RoomID)":       obj.RoomID,
-		"chatID (obj.Chat.Unit.ID)": obj.Chat.Unit.ID,
+		"roomID (obj.RoomID)":           obj.RoomID,
+		"chatID (obj.Chat.Unit.RoomID)": obj.Chat.Unit.ID,
 	})
 	defer node.MethodTiming()
 
 	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).UserID
+		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 		roomID   = obj.RoomID
 		chatID   = obj.Chat.Unit.ID
 		holder   models.AllowHolder

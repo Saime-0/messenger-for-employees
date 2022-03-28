@@ -146,7 +146,7 @@ func (r *ChatsRepo) Members(chatID int) (*model.Members, error) {
 	rows, err := r.db.Query(
 		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.user_id
+		ON units.id = member.employee_id
 		WHERE member.chat_id = $1`,
 		chatID,
 	)
@@ -187,8 +187,8 @@ func (r *RoomsRepo) MembersByArray(chatID int, memberIDs *[]int) (*model.Members
 	// language= PostgreSQL
 	query := `SELECT units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.user_id
-		WHERE member.user_id IN (` + kit.CommaSeparate(memberIDs) + `) AND member.chat_id =` + strconv.Itoa(chatID)
+		ON units.id = member.employee_id
+		WHERE member.employee_id IN (` + kit.CommaSeparate(memberIDs) + `) AND member.chat_id =` + strconv.Itoa(chatID)
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -219,12 +219,12 @@ func (r *RoomsRepo) MembersByArray(chatID int, memberIDs *[]int) (*model.Members
 	return members, nil
 }
 
-func (r *ChatsRepo) UserIsChatOwner(userID int, chatID int) bool {
+func (r *ChatsRepo) UserIsChatOwner(employeeID int, chatID int) bool {
 	isOwner := false
 	err := r.db.QueryRow(`
 		SELECT EXISTS(SELECT 1 FROM chats WHERE id = $1 AND owner_id = $2)`,
 		chatID,
-		userID,
+		employeeID,
 	).Scan(&isOwner)
 	if err != nil || !isOwner {
 		return isOwner
@@ -233,28 +233,28 @@ func (r *ChatsRepo) UserIsChatOwner(userID int, chatID int) bool {
 }
 
 // deprecated
-func (r *ChatsRepo) UserIsChatMember(userID int, chatID int) (isMember bool, err error) {
+func (r *ChatsRepo) UserIsChatMember(employeeID int, chatID int) (isMember bool, err error) {
 
 	err = r.db.QueryRow(`
 		SELECT EXISTS(
 	        SELECT 1
 			FROM chat_members 
-			WHERE user_id = $1 AND chat_id = $2
+			WHERE employee_id = $1 AND chat_id = $2
 	    )
 		`,
-		userID,
+		employeeID,
 		chatID,
 	).Scan(&isMember)
 
 	return
 }
-func (r *ChatsRepo) FindMemberBy(userID int, chatID int) *int {
+func (r *ChatsRepo) FindMemberBy(employeeID int, chatID int) *int {
 	var memberID *int
 	err := r.db.QueryRow(
 		`SELECT id
 		FROM chat_members 
-		WHERE user_id = $1 AND chat_id = $2`,
-		userID,
+		WHERE employee_id = $1 AND chat_id = $2`,
+		employeeID,
 		chatID,
 	).Scan(&memberID)
 	if err != nil {
@@ -262,19 +262,19 @@ func (r *ChatsRepo) FindMemberBy(userID int, chatID int) *int {
 	}
 	return memberID
 }
-func (r *ChatsRepo) AddUserToChat(userID int, chatID int) (*model.CreateMember, error) {
+func (r *ChatsRepo) AddUserToChat(employeeID int, chatID int) (*model.CreateMember, error) {
 	member := &model.CreateMember{
 		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(`		
 		WITH member AS (
-			    INSERT INTO chat_members (user_id, chat_id)
+			    INSERT INTO chat_members (employee_id, chat_id)
 				VALUES ($1, $2)
-				RETURNING id, chat_id, user_id
+				RETURNING id, chat_id, employee_id
 		)
-		SELECT member.id, chat_id, user_id, domain, name, type
-		FROM member join units on user_id = units.id`,
-		userID,
+		SELECT member.id, chat_id, employee_id, domain, name, type
+		FROM member join units on employee_id = units.id`,
+		employeeID,
 		chatID,
 	).Scan(
 		&member.ID,
@@ -288,7 +288,7 @@ func (r *ChatsRepo) AddUserToChat(userID int, chatID int) (*model.CreateMember, 
 	return member, err
 }
 
-func (r *ChatsRepo) GetCountUserChats(userID int) (count int, err error) {
+func (r *ChatsRepo) GetCountUserChats(employeeID int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM units INNER JOIN chats 
@@ -296,9 +296,9 @@ func (r *ChatsRepo) GetCountUserChats(userID int) (count int, err error) {
 		WHERE units.id IN (
 			SELECT chat_id 
 			FROM chat_members
-			WHERE user_id = $1
+			WHERE employee_id = $1
 			)`,
-		userID,
+		employeeID,
 	).Scan(&count)
 	return
 }
@@ -341,12 +341,12 @@ func (r *ChatsRepo) ChatExistsByDomain(chatDomain string) (exists bool) {
 	return
 }
 
-func (r *ChatsRepo) RemoveUserFromChat(userID int, chatID int) (*model.DeleteMember, error) {
+func (r *ChatsRepo) RemoveUserFromChat(employeeID int, chatID int) (*model.DeleteMember, error) {
 	member := &model.DeleteMember{}
 	err := r.db.QueryRow(`
 		DELETE FROM chat_members
-		WHERE user_id = $1 AND chat_id = $2`,
-		userID,
+		WHERE employee_id = $1 AND chat_id = $2`,
+		employeeID,
 		chatID,
 	).Scan(
 		&member.ID,
@@ -481,7 +481,7 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool, err error) {
 	return
 }
 
-func (r *ChatsRepo) AddUserByCode(code string, userID int) (*model.CreateMember, error) {
+func (r *ChatsRepo) AddUserByCode(code string, employeeID int) (*model.CreateMember, error) {
 	member := &model.CreateMember{
 		Unit: new(model.Unit),
 	}
@@ -492,14 +492,14 @@ func (r *ChatsRepo) AddUserByCode(code string, userID int) (*model.CreateMember,
 			WHERE code = $2
 			RETURNING chat_id
 		), member AS (
-			    INSERT INTO chat_members (user_id, chat_id)
+			    INSERT INTO chat_members (employee_id, chat_id)
 				SELECT $1, inv.chat_id
 			    FROM inv
-				RETURNING id, user_id, chat_id 
+				RETURNING id, employee_id, chat_id 
 		)
-		SELECT member.id, chat_id, user_id, domain, name, type
-		FROM member join units on user_id = units.id`,
-		userID,
+		SELECT member.id, chat_id, employee_id, domain, name, type
+		FROM member join units on employee_id = units.id`,
+		employeeID,
 		code,
 	).Scan(
 		&member.ID,
@@ -524,23 +524,23 @@ func (r *ChatsRepo) ChatIsPrivate(chatID int) (private bool) {
 	return
 }
 
-func (r *ChatsRepo) BanUserInChat(userID int, chatID int) (*model.DeleteMember, error) {
+func (r *ChatsRepo) BanUserInChat(employeeID int, chatID int) (*model.DeleteMember, error) {
 	member := &model.DeleteMember{}
 
 	err := r.db.QueryRow(`
 		WITH m AS (
 		    DELETE FROM chat_members
-			WHERE user_id = $1 AND chat_id = $2
-		    RETURNING id, user_id, chat_id
+			WHERE employee_id = $1 AND chat_id = $2
+		    RETURNING id, employee_id, chat_id
 		),
 		ban AS (
-			INSERT INTO chat_banlist (user_id, chat_id)
-			SELECT user_id, chat_id 
+			INSERT INTO chat_banlist (employee_id, chat_id)
+			SELECT employee_id, chat_id 
 			FROM m
 		)
 		SELECT m.id FROM m
 		`,
-		userID,
+		employeeID,
 		chatID,
 	).Scan(
 		&member.ID,
@@ -549,38 +549,38 @@ func (r *ChatsRepo) BanUserInChat(userID int, chatID int) (*model.DeleteMember, 
 	return member, err
 }
 
-func (r *ChatsRepo) UnbanUserInChat(userID int, chatID int) error {
+func (r *ChatsRepo) UnbanUserInChat(employeeID int, chatID int) error {
 	err := r.db.QueryRow(`
 	    DELETE FROM chat_banlist
-		WHERE user_id = $1 AND chat_id = $2
+		WHERE employee_id = $1 AND chat_id = $2
 		`,
-		userID,
+		employeeID,
 		chatID,
 	).Err()
 
 	return err
 }
 
-func (r *ChatsRepo) RemoveFromBanlist(userID int, chatID int) (err error) {
+func (r *ChatsRepo) RemoveFromBanlist(employeeID int, chatID int) (err error) {
 	err = r.db.QueryRow(
 		`DELETE FROM chat_banlist
-		WHERE chat_id = $1 AND user_id = $2`,
+		WHERE chat_id = $1 AND employee_id = $2`,
 		chatID,
-		userID,
+		employeeID,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) UserIsBannedInChat(userID int, chatID int) (banned bool) {
+func (r *ChatsRepo) UserIsBannedInChat(employeeID int, chatID int) (banned bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM chat_banlist
-			WHERE chat_id = $1 AND user_id = $2
+			WHERE chat_id = $1 AND employee_id = $2
 		)`,
 		chatID,
-		userID,
+		employeeID,
 	).Scan(&banned)
 
 	return
@@ -595,7 +595,7 @@ func (r *ChatsRepo) Banlist(chatID int) (*model.Users, error) {
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		INNER JOIN chat_banlist
-		ON units.id = chat_banlist.user_id
+		ON units.id = chat_banlist.employee_id
 		WHERE chat_banlist.chat_id = $1`,
 		chatID,
 	)
@@ -855,16 +855,16 @@ func (r *ChatsRepo) Owner(chatID int) (*model.User, error) {
 
 	return owner, err
 }
-func (r *ChatsRepo) UserIsBanned(userID int, chatID int) (banned bool, err error) {
+func (r *ChatsRepo) UserIsBanned(employeeID int, chatID int) (banned bool, err error) {
 	err = r.db.QueryRow(
-		`SELECT EXISTS(SELECT 1 FROM chat_banlist WHERE user_id = $1 AND chat_id = $2)`,
-		userID,
+		`SELECT EXISTS(SELECT 1 FROM chat_banlist WHERE employee_id = $1 AND chat_id = $2)`,
+		employeeID,
 		chatID,
 	).Scan(&banned)
 
 	return
 }
-func (r *ChatsRepo) MemberBy(userID, chatID int) (*model.Member, error) {
+func (r *ChatsRepo) MemberBy(employeeID, chatID int) (*model.Member, error) {
 	member := &model.Member{
 		User: &model.User{
 			Unit: new(model.Unit),
@@ -877,9 +877,9 @@ func (r *ChatsRepo) MemberBy(userID, chatID int) (*model.Member, error) {
 		SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units 
 		JOIN chat_members AS member
-		ON units.id = member.user_id
-		WHERE member.user_id = $1 AND member.chat_id = $2`,
-		userID,
+		ON units.id = member.employee_id
+		WHERE member.employee_id = $1 AND member.chat_id = $2`,
+		employeeID,
 		chatID,
 	).Scan(
 		&member.ID,
@@ -907,7 +907,7 @@ func (r *ChatsRepo) Member(memberID int) (*model.Member, error) {
 	err := r.db.QueryRow(
 		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.user_id
+		ON units.id = member.employee_id
 		WHERE member.id = $1`,
 		memberID,
 	).Scan(
@@ -1115,7 +1115,7 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) (*model.Members, error) 
 	rows, err := r.db.Query(`
 			SELECT members.id, chat_id, units.id, units.domain, units.name, units.type, role_id, char, joined_at, muted
 			FROM chat_members as members
-			JOIN units ON members.user_id = units.id
+			JOIN units ON members.employee_id = units.id
 			WHERE (
 			    $1::BIGINT IS NULL 
 			    OR units.id= $1 
@@ -1141,7 +1141,7 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) (*model.Members, error) 
 			    OR muted = $6 
 			)
 			`,
-		inp.UserID,
+		inp.EmployeeID,
 		inp.ChatID,
 		inp.MemberID,
 		inp.Char,
@@ -1196,10 +1196,10 @@ func (r *ChatsRepo) DemoMembers(chatID, selectType int, ids ...int) [2]*models.D
 	}
 
 	rows, err := r.db.Query(`
-		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
+		SELECT employee_id, chat_members.id, owner_id = employee_id as is_owner, char, muted
 		FROM chat_members 
 		JOIN chats ON chats.id = chat_members.chat_id
-		WHERE $2 = 0 AND chats.id = $1 AND user_id = ANY ($3)
+		WHERE $2 = 0 AND chats.id = $1 AND employee_id = ANY ($3)
 		    OR $2 = 1 AND chat_members.id = ANY ($3)
 		`,
 		chatID,
@@ -1215,7 +1215,7 @@ func (r *ChatsRepo) DemoMembers(chatID, selectType int, ids ...int) [2]*models.D
 			return demoMembers
 		}
 		for i, member := range demoMembers {
-			if selectType == 0 && member.UserID == ids[0] ||
+			if selectType == 0 && member.EmployeeID == ids[0] ||
 				selectType == 1 && member.MemberID == ids[0] {
 				demoMembers[0], demoMembers[1] = demoMembers[i], demoMembers[1-i]
 			}
@@ -1225,7 +1225,7 @@ func (r *ChatsRepo) DemoMembers(chatID, selectType int, ids ...int) [2]*models.D
 	i := 0
 	for rows.Next() {
 		m := &models.DemoMember{}
-		if err = rows.Scan(&m.UserID, &m.MemberID, &m.IsOwner, &m.Char, &m.Muted); err != nil {
+		if err = rows.Scan(&m.EmployeeID, &m.MemberID, &m.IsOwner, &m.Char, &m.Muted); err != nil {
 			return sort()
 		}
 		demoMembers[i] = m
@@ -1286,20 +1286,20 @@ func (r *ChatsRepo) UpdateChat(chatID int, inp *model.UpdateChatInput) (*model.U
 func (r *ChatsRepo) DefMember(memberID int) (*models.DefMember, error) {
 	defMember := new(models.DefMember)
 	err := r.db.QueryRow(`
-		SELECT coalesce(user_id, 0) userID,
+		SELECT coalesce(employee_id, 0) employeeID,
 	       	   coalesce(chat_id, 0) chatID
 		FROM (SELECT 1) x
 		LEFT JOIN chat_members m ON id = $1
 		`,
 		memberID,
 	).Scan(
-		&defMember.UserID,
+		&defMember.EmployeeID,
 		&defMember.ChatID,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if defMember.UserID == 0 {
+	if defMember.EmployeeID == 0 {
 		return nil, nil
 	}
 
@@ -1402,13 +1402,13 @@ func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bo
 }
 
 // if noAccessTo = 0 then acces allow to all chats
-func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, noAccessTo int, err error) {
+func (r *ChatsRepo) UserHasAccessToChats(employeeID int, chats *[]int) (members []*models.SubUser, noAccessTo int, err error) {
 	rows, err := r.db.Query(`
 	    SELECT cm.id, elem
 	    FROM unnest($2::BIGINT[]) elem
 	    LEFT JOIN chats c ON c.id = elem
-	    LEFT JOIN chat_members cm ON cm.chat_id = c.id AND cm.user_id = $1`,
-		userID,
+	    LEFT JOIN chat_members cm ON cm.chat_id = c.id AND cm.employee_id = $1`,
+		employeeID,
 		pq.Array(*chats),
 	)
 	if err != nil {

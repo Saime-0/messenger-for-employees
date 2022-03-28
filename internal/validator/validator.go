@@ -21,8 +21,8 @@ func ValidateDomain(domain string) (valid bool) {
 }
 
 func ValidateEmployeeFullName(fullName string) (valid bool) {
-	for _, word := range strings.Split(fullName, " ") {
-		if !expPartOfName.MatchString(word) {
+	for i, word := range strings.Split(strings.ToLower(fullName), " ") {
+		if !expPartOfName.MatchString(word) || i > 1 {
 			return false
 		}
 	}

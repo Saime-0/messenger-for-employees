@@ -11,17 +11,17 @@ func (r *userInp) isRequestInput()     {}
 
 type (
 	userInp struct {
-		UserID int
+		EmployeeID int
 	}
 	userResult struct {
 		User *model.User
 	}
 )
 
-func (d *Dataloader) User(userID int) (*model.User, error) {
+func (d *Dataloader) User(employeeID int) (*model.User, error) {
 	res := <-d.categories.User.addBaseRequest(
 		&userInp{
-			UserID: userID,
+			EmployeeID: employeeID,
 		},
 		new(userResult),
 	)
@@ -35,12 +35,12 @@ func (c *parentCategory) user() {
 	var (
 		inp = c.Requests
 
-		ptrs    []chanPtr
-		userIDs []int
+		ptrs        []chanPtr
+		employeeIDs []int
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
-		userIDs = append(userIDs, query.Inp.(*userInp).UserID)
+		employeeIDs = append(employeeIDs, query.Inp.(*userInp).EmployeeID)
 	}
 
 	rows, err := c.Dataloader.db.Query(`
@@ -49,11 +49,11 @@ func (c *parentCategory) user() {
 		       coalesce(domain, ''), 
 		       coalesce(name, ''), 
 		       coalesce(type, 'USER') 
-		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, userid)
-		LEFT JOIN units u ON u.id = inp.userid AND u.type = 'USER'
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, employeeid)
+		LEFT JOIN units u ON u.id = inp.employeeid AND u.type = 'USER'
 		`,
 		pq.Array(ptrs),
-		pq.Array(userIDs),
+		pq.Array(employeeIDs),
 	)
 	if err != nil {
 		//c.Dataloader.healer.Alert("user:" + err.Error())
