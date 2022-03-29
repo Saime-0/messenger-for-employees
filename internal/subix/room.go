@@ -15,7 +15,7 @@ type Room struct {
 	clientsWithEvents ClientsWithEvents
 }
 
-func (s *Subix) CreateRoomIfNotExists(roomID, chatID int) *Room {
+func (s *Subix) CreateRoomIfNotExists(roomID int) *Room {
 	room, ok := s.rooms[roomID]
 	if !ok {
 		room = &Room{
@@ -39,5 +39,24 @@ func (s *Subix) DeleteRoom(roomID int) {
 		if ok {
 			delete(emp.rooms, room.RoomID)
 		}
+	}
+}
+
+func (s *Subix) DeleteMember(roomID int, empID int) {
+	emp, ok := s.employees[empID]
+	if ok {
+		room, ok := s.rooms[roomID]
+		if ok {
+			for _, client := range emp.clients { // удалить клиентов из комнаты на основе клиентов сотрудника
+				delete(room.clientsWithEvents, client.sessionKey)
+			}
+			delete(room.Empls, empID) // удалить сотрудника из комнаты
+
+			if len(room.Empls) == 0 {
+				s.DeleteRoom(roomID)
+			}
+		}
+		delete(emp.rooms, roomID) // удалить комнату из сотрудника
+
 	}
 }

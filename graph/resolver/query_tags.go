@@ -23,7 +23,7 @@ func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.T
 	defer node.MethodTiming()
 
 	var (
-	//clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
+	//clientID = utils.GetAuthDataFromCtx(ctx).RoomID
 	)
 
 	if node.ValidParams(&params) {

@@ -56,37 +56,21 @@ func (s *Subix) deleteEmployee(empID int) {
 			delete(s.clients, client.sessionKey) // удаление
 		}
 
-		for _, room := range emp.rooms { // а здесь определяем мемберов, к которым относятся к пользователю
-
-			delete(room.Empls, empID)
-
-			if len(room.Empls) == 0 {
-				s.DeleteRoom(room.RoomID) // удаляем по отдельности через функцию
-			} else {
-				for _, client := range emp.clients {
-					delete(room.clientsWithEvents, client.sessionKey)
-					if len(room.clientsWithEvents) == 0 {
-						s.DeleteRoom(room.RoomID)
-					}
-				}
-			}
-
+		for _, room := range emp.rooms {
+			s.DeleteMember(room.RoomID, empID)
 		}
 		emp.clients = nil
-		//emp.rooms = nil // на всякий случай заnullяем мапу
+		emp.rooms = nil // на всякий случай заnullяем мапу
 		// теперь на этого пользователя не должно остаться ссылок как и на его клиентов
 	}
 
 }
 
-func (s *Subix) deleteClient(sessionKey Key) error {
+func (s *Subix) deleteClient(sessionKey Key) {
 	client, ok := s.clients[sessionKey]
 	if ok {
 		delete(s.clients, client.sessionKey)
-		err := s.sched.DropTask(&client.task)
-		if err != nil {
-			return cerrors.Wrap(err, "не удалось удалить клиента")
-		}
+		s.sched.DropTask(&client.task)
 		select {
 		case x, ok := <-client.Ch:
 			if ok {
@@ -115,8 +99,6 @@ func (s *Subix) deleteClient(sessionKey Key) error {
 			}
 		}
 	}
-	//println("удален клиент", client.sessionKey)
-	return nil
 }
 
 func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {

@@ -14,11 +14,11 @@ type (
 		EmployeeID int
 	}
 	userResult struct {
-		User *model.User
+		Employee *model.Employee
 	}
 )
 
-func (d *Dataloader) User(employeeID int) (*model.User, error) {
+func (d *Dataloader) Employee(employeeID int) (*model.Employee, error) {
 	res := <-d.categories.User.addBaseRequest(
 		&userInp{
 			EmployeeID: employeeID,
@@ -28,7 +28,7 @@ func (d *Dataloader) User(employeeID int) (*model.User, error) {
 	if res == nil {
 		return nil, d.categories.User.Error
 	}
-	return res.(*userResult).User, nil
+	return res.(*userResult).Employee, nil
 }
 
 func (c *parentCategory) user() {
@@ -45,12 +45,12 @@ func (c *parentCategory) user() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr, 
-		       coalesce(id, 0), 
-		       coalesce(domain, ''), 
-		       coalesce(name, ''), 
-		       coalesce(type, 'USER') 
+		       coalesce(emp_id, 0), 
+		       coalesce(first_name, ''), 
+		       coalesce(last_name, ''), 
+		       coalesce(joined_at, 0) 
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, employeeid)
-		LEFT JOIN units u ON u.id = inp.employeeid AND u.type = 'USER'
+		LEFT JOIN employees e ON e.emp_id = inp.employeeid
 		`,
 		pq.Array(ptrs),
 		pq.Array(employeeIDs),
@@ -62,23 +62,22 @@ func (c *parentCategory) user() {
 	}
 	defer rows.Close()
 
-	var ( // каждую итерацию будем менять значения
+	var ( // Каждую итерацию будем менять значения
 		ptr chanPtr
 	)
 	for rows.Next() {
-		m := &model.User{Unit: new(model.Unit)}
-
-		if err = rows.Scan(&ptr, &m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
+		m := new(model.Employee)
+		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName, &m.JoinedAt); err != nil {
 			//c.Dataloader.healer.Alert("user (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}
-		if m.Unit.ID == 0 {
+		if m.EmpID == 0 {
 			m = nil
 		}
 
 		request := c.getRequest(ptr)
-		request.Result.(*userResult).User = m
+		request.Result.(*userResult).Employee = m
 	}
 
 	c.Error = nil

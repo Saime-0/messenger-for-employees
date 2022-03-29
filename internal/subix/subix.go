@@ -6,7 +6,6 @@ import (
 )
 
 type Subix struct {
-	chats     Chats
 	rooms     Rooms
 	employees Employees
 	clients   Clients
@@ -16,7 +15,6 @@ type Subix struct {
 
 func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix {
 	return &Subix{
-		chats:     Chats{},
 		rooms:     Rooms{},
 		employees: Employees{},
 		clients:   Clients{},

@@ -11,6 +11,7 @@ func (r *roomInp) isRequestInput()     {}
 
 type (
 	roomInp struct {
+		EmpID  int
 		RoomID int
 	}
 	roomResult struct {
@@ -18,9 +19,10 @@ type (
 	}
 )
 
-func (d *Dataloader) Room(roomID int) (*model.Room, error) {
+func (d *Dataloader) Room(empID, roomID int) (*model.Room, error) {
 	res := <-d.categories.Room.addBaseRequest(
 		&roomInp{
+			EmpID:  empID,
 			RoomID: roomID,
 		},
 		new(roomResult),
@@ -36,24 +38,30 @@ func (c *parentCategory) room() {
 		inp = c.Requests
 
 		ptrs    []chanPtr
+		empIDs  []int
 		roomIDs []int
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
+		empIDs = append(empIDs, query.Inp.(*roomInp).EmpID)
 		roomIDs = append(roomIDs, query.Inp.(*roomInp).RoomID)
 	}
-
-	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, 
-		       coalesce(id, 0), 
-		       coalesce(chat_id, 0), 
-		       coalesce(parent_id, 0), 
-		       coalesce(name, ''), 
-		       coalesce(note, '')
-		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, roomid)
-		LEFT JOIN rooms m ON m.id = inp.roomid
+	// todo fix
+	rows, err := c.Dataloader.db.Query(`  
+		SELECT ptr,
+				coalesce(r.room_id, 0),
+				coalesce(r.name, ''),
+				coalesce(r.view, 'TALK'),
+				coalesce(m.emp_id, 0), 
+				coalesce(m.last_msg_read, 0),
+				coalesce(c.last_msg_id, 0 )
+		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, empid, roomid)
+		LEFT JOIN rooms r on r.room_id = inp.roomid
+		LEFT JOIN members m ON m.emp_id = inp.empid
+		LEFT JOIN msg_state c on r.room_id = c.room_id
 		`,
 		pq.Array(ptrs),
+		pq.Array(empIDs),
 		pq.Array(roomIDs),
 	)
 	if err != nil {

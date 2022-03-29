@@ -7,7 +7,7 @@ import (
 
 func (c *parentCategory) getRequest(ptr chanPtr) *baseRequest {
 	request, ok := c.Requests[ptr]
-	if !ok { // если еще не создавали то надо паниковать
+	if !ok { // если еще не создавали, то надо паниковать
 		c.Dataloader.healer.Alert(cerrors.Wrap(cerrors.New("c.Requests not exists"), utils.GetCallerPos()))
 		panic("c.Requests not exists by" + ptr)
 	}

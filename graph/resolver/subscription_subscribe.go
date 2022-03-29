@@ -47,10 +47,7 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 	go func() {
 		<-ctx.Done()
 		// client is down
-		err = r.Subix.Unsub(sessionKey)
-		if err != nil {
-			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
-		}
+		r.Subix.Unsub(sessionKey)
 	}()
 
 	return client.Ch, nil

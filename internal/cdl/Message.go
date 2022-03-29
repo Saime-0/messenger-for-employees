@@ -45,15 +45,14 @@ func (c *parentCategory) message() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr, 
-		       coalesce(id, 0), 
-		       coalesce(reply_to, 0), 
-		       coalesce(employee_id, 0), 
-		       coalesce(room_id, 0), 
-		       coalesce(body, ''), 
-		       coalesce(type, 'USER'),
-		       coalesce(created_at, 0)
+		       coalesce(m.room_id, 0), 
+		       coalesce(m.msg_id, 0), 
+		       coalesce(m.emp_id, 0), 
+		       coalesce(m.target_id, NULL), 
+		       coalesce(m.body, ''), 
+		       coalesce(m.created_at, 0)
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, messageid)
-		LEFT JOIN messages m ON m.id = inp.messageid
+		LEFT JOIN messages m ON m.msg_id = inp.messageid
 		`,
 		pq.Array(ptrs),
 		pq.Array(messageIDs),
@@ -66,32 +65,23 @@ func (c *parentCategory) message() {
 	defer rows.Close()
 
 	var ( // каждую итерацию будем менять значения
-		ptr        chanPtr
-		replyTo    *int
-		employeeID *int
+		ptr      chanPtr
+		targetID *int
 	)
 	for rows.Next() {
 		m := &model.Message{Room: new(model.Room)}
-
-		if err = rows.Scan(&ptr, &m.ID, &replyTo, &employeeID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&ptr, &m.Room.RoomID, &m.MsgID, &m.Employee.EmpID, &targetID, &m.Body, &m.CreatedAt); err != nil {
 			//c.Dataloader.healer.Alert("message (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}
-		if m.ID == 0 {
+		if m.MsgID == 0 {
 			m = nil
-			goto sendRequest
 		}
-		if replyTo != nil {
-			m.ReplyTo = &model.Message{ID: *replyTo}
-		}
-		if employeeID != nil {
-			m.User = &model.User{
-				Unit: &model.Unit{ID: *employeeID},
-			}
+		if targetID != nil {
+			m.TargetMsgID = &model.Message{MsgID: *targetID}
 		}
 
-	sendRequest:
 		request := c.getRequest(ptr)
 		request.Result.(*messageResult).Message = m
 	}

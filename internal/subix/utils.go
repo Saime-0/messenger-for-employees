@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-func (s *Subix) informMembers(membersID []int, body model.EventResult) {
-	for _, memberID := range membersID {
-		member, ok := s.rooms[memberID]
+func (s *Subix) writeToRoom(body model.EventResult, roomIDs ...int) {
+	for _, roomID := range roomIDs {
+		room, ok := s.rooms[roomID]
 		if !ok {
 			continue
 		}
-		s.writeToMembers(
-			member.clientsWithEvents,
+		s.writeToClientsWithEvents(
+			room.clientsWithEvents,
 			body,
 			getEventTypeByEventResult(body),
 		)
@@ -21,35 +21,17 @@ func (s *Subix) informMembers(membersID []int, body model.EventResult) {
 	}
 }
 
-func (s *Subix) informChat(chatsID []int, body model.EventResult) {
-	for _, chatID := range chatsID {
-		chat, ok := s.chats[chatID]
-		if !ok {
-			continue
-		}
-
-		for _, member := range chat.members {
-
-			s.writeToMembers(
-				member.clientsWithEvents,
-				body,
-				getEventTypeByEventResult(body),
-			)
-
-		}
-
-	}
-}
-
-// deprecated
-func (s *Subix) writeToUsers(usersID []int, body model.EventResult) {
+func (s *Subix) writeToEmployees(body model.EventResult, empIDs ...int) {
 	eventType := getEventTypeByEventResult(body)
-	for _, userID := range usersID {
-		user, ok := s.employees[userID]
+	for _, empID := range empIDs {
+		emp, ok := s.employees[empID]
 		if !ok {
 			continue
 		}
-		for _, client := range user.clients {
+		for _, client := range emp.clients {
+			// у клиента нет набора ивентов которые он хочет получать
+			// они есть только у участников, тк для каждой отдельной комнаты можно установить свою коллекцию,
+			// а остальные ивенты, не связанные с комнатами, клиенты получают обязательно (прим. R)
 			s.writeToClient(
 				client,
 				&model.SubscriptionBody{
@@ -62,7 +44,7 @@ func (s *Subix) writeToUsers(usersID []int, body model.EventResult) {
 	}
 }
 
-func (s *Subix) writeToMembers(clientsWithEvents ClientsWithEvents, body model.EventResult, eventType model.EventType) {
+func (s *Subix) writeToClientsWithEvents(clientsWithEvents ClientsWithEvents, body model.EventResult, eventType model.EventType) {
 	for _, clientWithEvents := range clientsWithEvents {
 		if _, ok := clientWithEvents.Events[eventType]; !ok { // если он не слушает эти события, то..
 			continue // ..и слать их ему не надо, просто скипаем этого клиента
@@ -83,7 +65,7 @@ func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
 	}
 	select {
 	case (*client).Ch <- subbody: // success
-	default: // client chan is close
+	default: // канал никто не слушает
 		if client != nil {
 			defer s.deleteClient(client.sessionKey)
 		}

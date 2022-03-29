@@ -37,8 +37,13 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ListenCollection() ListenCollectionResolver
+	Me() MeResolver
+	Member() MemberResolver
+	Message() MessageResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Room() RoomResolver
 	Subscription() SubscriptionResolver
 }
 
@@ -124,7 +129,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		EditListenEventCollection func(childComplexity int, sessionKey string, action model.EventSubjectAction, targetChats []int, listenEvents []model.EventType) int
+		EditListenEventCollection func(childComplexity int, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) int
 		Login                     func(childComplexity int, input model.LoginInput) int
 		RefreshTokens             func(childComplexity int, sessionKey *string, refreshToken string) int
 		SendMsg                   func(childComplexity int, input model.CreateMessageInput) int
@@ -238,11 +243,27 @@ type ComplexityRoot struct {
 	}
 }
 
+type ListenCollectionResolver interface {
+	Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error)
+}
+type MeResolver interface {
+	Rooms(ctx context.Context, obj *model.Me) (*model.Rooms, error)
+}
+type MemberResolver interface {
+	Employee(ctx context.Context, obj *model.Member) (*model.Employee, error)
+	Room(ctx context.Context, obj *model.Member) (*model.Room, error)
+}
+type MessageResolver interface {
+	Room(ctx context.Context, obj *model.Message) (*model.Room, error)
+
+	Employee(ctx context.Context, obj *model.Message) (*model.Employee, error)
+	TargetMsgID(ctx context.Context, obj *model.Message) (*model.Message, error)
+}
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error)
 	RefreshTokens(ctx context.Context, sessionKey *string, refreshToken string) (model.RefreshTokensResult, error)
 	SendMsg(ctx context.Context, input model.CreateMessageInput) (model.SendMsgResult, error)
-	EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetChats []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error)
+	EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error)
 }
 type QueryResolver interface {
 	Employees(ctx context.Context, find model.FindEmployees, params *model.Params) (model.EmployeesResult, error)
@@ -250,6 +271,9 @@ type QueryResolver interface {
 	Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error)
 	Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error)
 	Tags(ctx context.Context, params *model.Params) (model.TagsResult, error)
+}
+type RoomResolver interface {
+	Members(ctx context.Context, obj *model.Room) (*model.Members, error)
 }
 type SubscriptionResolver interface {
 	Subscribe(ctx context.Context, sessionKey string) (<-chan *model.SubscriptionBody, error)
@@ -504,7 +528,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EditListenEventCollection(childComplexity, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetChats"].([]int), args["listenEvents"].([]model.EventType)), true
+		return e.complexity.Mutation.EditListenEventCollection(childComplexity, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetRooms"].([]int), args["listenEvents"].([]model.EventType)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -980,7 +1004,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "graph-models/schemas/_directives.graphql", Input: `directive @goField(
-    forceResolver: Boolean = true
+    forceResolver: Boolean
     name: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
@@ -1024,7 +1048,7 @@ type TokenPair {
 }
 
 type Employee {
-    empID: RoomID!
+    empID: ID!
     firstName: String!
     lastName: String!
     joinedAt: Int64!
@@ -1042,28 +1066,28 @@ type PersonalData {
 }
 
 type Room {
-    roomID: RoomID!
+    roomID: ID!
     name: String!
     view: RoomType!
     # for the client
-    lastMessageRead: RoomID!
-    lastMessageID: RoomID!
-    members: Members! @goField
+    lastMessageRead: ID!
+    lastMessageID: ID!
+    members: Members! @goField(forceResolver: true)
 }
 type Rooms {
     rooms: [Room!]
 }
 
 type Member {
-    employee: Employee! @goField
-    room: Room! @goField
+    employee: Employee! @goField(forceResolver: true)
+    room: Room! @goField(forceResolver: true)
 }
 type Members {
     members: [Member!]
 }
 
 type Tag {
-    tagID: RoomID!
+    tagID: ID!
     name: String!
 }
 type Tags {
@@ -1071,10 +1095,10 @@ type Tags {
 }
 
 type Message {
-    room: Room! @goField
-    msgID: RoomID!
-    employee: Employee! @goField
-    targetMsgID: Message @goField
+    room: Room! @goField(forceResolver: true)
+    msgID: ID!
+    employee: Employee! @goField(forceResolver: true)
+    targetMsgID: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
 }
@@ -1085,17 +1109,17 @@ type Messages {
 type Me {
     employee: Employee!
     personal: PersonalData!
-    rooms: Rooms! @goField
+    rooms: Rooms! @goField(forceResolver: true)
 }
 
 type ListenCollection {
     sessionKey: String!
     success: String!
-    collection: [ListenedChat!]! @goField
+    collection: [ListenedChat!]! @goField(forceResolver: true)
 }
 
 type ListenedChat {
-    id: RoomID!
+    id: ID!
     events: [EventType!]!
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/inputs.graphql", Input: `input LoginInput {
@@ -1109,31 +1133,31 @@ input RegisterInput {
     password: String!
 }
 input CreateMessageInput {
-    roomID: RoomID!
-    targetMsgID: RoomID
+    roomID: ID!
+    targetMsgID: ID
     body: String!
 }
 
 input FindEmployees {
-    empID: RoomID
-    roomID: RoomID
-    tagID: RoomID
+    empID: ID
+    roomID: ID
+    tagID: ID
     name: String
 }
 
 # возвращает в обратном хронологическом порядке
 input FindMessages {
-    msgID: RoomID
-    empID: RoomID
-    roomID: RoomID
-    targetID: RoomID
+    msgID: ID
+    empID: ID
+    roomID: ID
+    targetID: ID
     textFragment: String
 }
 
 # возвращает в обратном хронологическом порядке
 # если равно 0 то началом будет считаться самое новое сообщение
 #input FindMessagesInRoom {
-#    startMessageId: RoomID!
+#    startMessageId: ID!
 #    created: MessagesCreated!
 #    count: Int!
 #}
@@ -1142,8 +1166,8 @@ input FindMessages {
 #    AFTER
 #}
 
-input FindRooms {
-    roomID: RoomID
+input Rooms {
+    roomID: ID
     name: String
 }
 
@@ -1154,32 +1178,32 @@ input FindRooms {
 
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/mutation_login.graphql", Input: `extend type Mutation {
-    login(input: LoginInput!): LoginResult! @goField
+    login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/mutation_refresh_tokens.graphql", Input: `extend type Mutation {
-    refreshTokens(sessionKey: String, refreshToken: String!): RefreshTokensResult! @goField
+    refreshTokens(sessionKey: String, refreshToken: String!): RefreshTokensResult! @goField(forceResolver: true)
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/mutation_send_msg.graphql", Input: `extend type Mutation {
-    sendMsg(input: CreateMessageInput!): SendMsgResult! @goField @isAuth
+    sendMsg(input: CreateMessageInput!): SendMsgResult! @goField(forceResolver: true) @isAuth
 }
 
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation.graphql", Input: `type Mutation`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_employees.graphql", Input: `extend type Query {
-    employees(find: FindEmployees! @inputLeastOne, params: Params): EmployeesResult! @goField @isAuth
+    employees(find: FindEmployees! @inputLeastOne, params: Params): EmployeesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_me.graphql", Input: `extend type Query {
-    me: MeResult! @goField @isAuth
+    me: MeResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_messages.graphql", Input: `extend type Query {
-    messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField @isAuth
+    messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_rooms.graphql", Input: `extend type Query {
-    rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField @isAuth
+    rooms(find: Rooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_tags.graphql", Input: `extend type Query {
-    tags(params: Params): TagsResult! @goField @isAuth
+    tags(params: Params): TagsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
 	{Name: "graph-models/schemas/response.graphql", Input: `type AdvancedError {
@@ -1269,16 +1293,15 @@ enum EventType {
     DeleteRoom
 
     TokenExpired
-
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/subscription/mutation_edit_listen_event_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
 extend type Mutation {
 	editListenEventCollection(
 		sessionKey: String!,
 		action: EventSubjectAction!
-		targetChats: [RoomID!]!
+		targetRooms: [ID!]!
 		listenEvents: [EventType!]!
-	): EditListenEventCollectionResult! @goField @isAuth
+	): EditListenEventCollectionResult! @goField(forceResolver: true) @isAuth
 }
 
 `, BuiltIn: false},
@@ -1289,72 +1312,72 @@ extend type Mutation {
 }
 
 type NewMessage {
-	msgID: RoomID!
-	roomID: RoomID!
-	targetMsgID: RoomID
-	empID: RoomID!
+	msgID: ID!
+	roomID: ID!
+	targetMsgID: ID
+	empID: ID!
 	body: String!
 	createdAt: Int64!
 }
 
 type UpdateEmpFirstName {
-	empID: RoomID!
+	empID: ID!
 	val: String!
 }
 
 type UpdateEmpLastName {
-	empID: RoomID!
+	empID: ID!
 	val: String!
 }
 
 type GiveTagToEmp {
-	empID: RoomID!
-	tagsID: [RoomID!]
+	empID: ID!
+	tagsID: [ID!]
 }
 
 type TakeTagFromEmp {
-	empID: RoomID!
-	tagsID: [RoomID!]
+	empID: ID!
+	tagsID: [ID!]
 }
 
 type RemoveTagFromEmp {
-	empID: RoomID!
-	tagID: RoomID!
+	empID: ID!
+	tagID: ID!
 }
 
 type NewMember {
-	empID: RoomID!
-	roomsID: [RoomID!]
+	empID: ID!
+	roomsID: [ID!]
 }
 
 type RemoveMember {
-	empID: RoomID!
-	roomID: RoomID!
+	empID: ID!
+	roomID: ID!
 }
 
 type CreateTag {
-	tagID: RoomID!
+	tagID: ID!
 	name: String!
 #	color: HexColor!
 }
 
 type UpdateTag {
-	tagID: RoomID!
+	tagID: ID!
 	name: String!
 }
 
 type DeleteTag {
-	tagID: [RoomID!]
+	tagID: [ID!]
 }
 
 type UpdateRoomName {
-	roomID: RoomID!
+	roomID: ID!
 	name: String!
 }
 
 
 type DeleteRoom {
-	roomsID: [RoomID!]
+	roomsID: [ID!]
 }
 
 
@@ -1364,7 +1387,7 @@ type TokenExpired {
 	{Name: "graph-models/schemas/subscription/subscription_subscribe.graphql", Input: `extend type Subscription {
 	subscribe(
 		sessionKey: String!,
-	): SubscriptionBody @goField # @isAuth здесь не работает, проверка происходит в резольвире
+	): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/subscription.graphql", Input: `type Subscription`, BuiltIn: false},
 }
@@ -1396,14 +1419,14 @@ func (ec *executionContext) field_Mutation_editListenEventCollection_args(ctx co
 	}
 	args["action"] = arg1
 	var arg2 []int
-	if tmp, ok := rawArgs["targetChats"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetChats"))
+	if tmp, ok := rawArgs["targetRooms"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetRooms"))
 		arg2, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["targetChats"] = arg2
+	args["targetRooms"] = arg2
 	var arg3 []model.EventType
 	if tmp, ok := rawArgs["listenEvents"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listenEvents"))
@@ -1586,7 +1609,7 @@ func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs 
 		if data, ok := tmp.(model.FindRooms); ok {
 			arg0 = data
 		} else {
-			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.FindRooms`, tmp))
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.Rooms`, tmp))
 		}
 	}
 	args["find"] = arg0
@@ -2258,14 +2281,14 @@ func (ec *executionContext) _ListenCollection_collection(ctx context.Context, fi
 		Object:     "ListenCollection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Collection, nil
+		return ec.resolvers.ListenCollection().Collection(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2433,14 +2456,14 @@ func (ec *executionContext) _Me_rooms(ctx context.Context, field graphql.Collect
 		Object:     "Me",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Rooms, nil
+		return ec.resolvers.Me().Rooms(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2468,14 +2491,14 @@ func (ec *executionContext) _Member_employee(ctx context.Context, field graphql.
 		Object:     "Member",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Employee, nil
+		return ec.resolvers.Member().Employee(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2503,14 +2526,14 @@ func (ec *executionContext) _Member_room(ctx context.Context, field graphql.Coll
 		Object:     "Member",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Room, nil
+		return ec.resolvers.Member().Room(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2570,14 +2593,14 @@ func (ec *executionContext) _Message_room(ctx context.Context, field graphql.Col
 		Object:     "Message",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Room, nil
+		return ec.resolvers.Message().Room(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2640,14 +2663,14 @@ func (ec *executionContext) _Message_employee(ctx context.Context, field graphql
 		Object:     "Message",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Employee, nil
+		return ec.resolvers.Message().Employee(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2675,14 +2698,14 @@ func (ec *executionContext) _Message_targetMsgID(ctx context.Context, field grap
 		Object:     "Message",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TargetMsgID, nil
+		return ec.resolvers.Message().TargetMsgID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2970,7 +2993,7 @@ func (ec *executionContext) _Mutation_editListenEventCollection(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().EditListenEventCollection(rctx, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetChats"].([]int), args["listenEvents"].([]model.EventType))
+			return ec.resolvers.Mutation().EditListenEventCollection(rctx, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetRooms"].([]int), args["listenEvents"].([]model.EventType))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4085,14 +4108,14 @@ func (ec *executionContext) _Room_members(ctx context.Context, field graphql.Col
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Members, nil
+		return ec.resolvers.Room().Members(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6977,7 +7000,7 @@ func (ec *executionContext) _ListenCollection(ctx context.Context, sel ast.Selec
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "success":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -6987,18 +7010,28 @@ func (ec *executionContext) _ListenCollection(ctx context.Context, sel ast.Selec
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "collection":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._ListenCollection_collection(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ListenCollection_collection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7069,7 +7102,7 @@ func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "personal":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7079,18 +7112,28 @@ func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "rooms":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Me_rooms(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Me_rooms(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7113,25 +7156,45 @@ func (ec *executionContext) _Member(ctx context.Context, sel ast.SelectionSet, o
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Member")
 		case "employee":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Member_employee(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Member_employee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		case "room":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Member_room(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Member_room(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7182,15 +7245,25 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Message")
 		case "room":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Message_room(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_room(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		case "msgID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Message_msgID(ctx, field, obj)
@@ -7199,25 +7272,45 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "employee":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Message_employee(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_employee(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		case "targetMsgID":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Message_targetMsgID(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Message_targetMsgID(ctx, field, obj)
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
+			})
 		case "body":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Message_body(ctx, field, obj)
@@ -7226,7 +7319,7 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7236,7 +7329,7 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -7773,7 +7866,7 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7783,7 +7876,7 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "view":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7793,7 +7886,7 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "lastMessageRead":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7803,7 +7896,7 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "lastMessageID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7813,18 +7906,28 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "members":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Room_members(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Room_members(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8752,6 +8855,10 @@ func (ec *executionContext) marshalNEditListenEventCollectionResult2githubᚗcom
 	return ec._EditListenEventCollectionResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEmployee2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEmployee(ctx context.Context, sel ast.SelectionSet, v model.Employee) graphql.Marshaler {
+	return ec._Employee(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEmployee(ctx context.Context, sel ast.SelectionSet, v *model.Employee) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9029,6 +9136,10 @@ func (ec *executionContext) marshalNMember2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑ
 	return ec._Member(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMembers2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMembers(ctx context.Context, sel ast.SelectionSet, v model.Members) graphql.Marshaler {
+	return ec._Members(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNMembers2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMembers(ctx context.Context, sel ast.SelectionSet, v *model.Members) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9079,6 +9190,10 @@ func (ec *executionContext) marshalNRefreshTokensResult2githubᚗcomᚋsaimeᚑ0
 	return ec._RefreshTokensResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRoom2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v model.Room) graphql.Marshaler {
+	return ec._Room(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNRoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9097,6 +9212,10 @@ func (ec *executionContext) unmarshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋhttp�
 
 func (ec *executionContext) marshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoomType(ctx context.Context, sel ast.SelectionSet, v model.RoomType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNRooms2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRooms(ctx context.Context, sel ast.SelectionSet, v model.Rooms) graphql.Marshaler {
+	return ec._Rooms(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNRooms2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRooms(ctx context.Context, sel ast.SelectionSet, v *model.Rooms) graphql.Marshaler {

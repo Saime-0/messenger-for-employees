@@ -14,14 +14,14 @@ type (
 		Rooms *model.Rooms
 	}
 	RoomsInp struct {
-		ChatID int
+		EmployeeID int
 	}
 )
 
-func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
+func (d *Dataloader) Rooms(empID int) (*model.Rooms, error) {
 	res := <-d.categories.Rooms.addBaseRequest(
 		&RoomsInp{
-			ChatID: chatID,
+			EmployeeID: empID,
 		},
 		&RoomsResult{
 			Rooms: &model.Rooms{
@@ -39,26 +39,29 @@ func (c *parentCategory) rooms() {
 	var (
 		inp = c.Requests
 
-		ptrs    []chanPtr
-		chatIDs []int
+		ptrs   []chanPtr
+		empIDs []int
 	)
 	for _, query := range inp {
-		chatIDs = append(chatIDs, query.Inp.(*RoomsInp).ChatID)
+		empIDs = append(empIDs, query.Inp.(*RoomsInp).EmployeeID)
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
 	}
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr,
-				coalesce(id, 0),
-				coalesce(chat_id, 0),
-				coalesce(parent_id, 0),
-				coalesce(name, ''), 
-				coalesce(note, '')
-		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, chatid)
-		LEFT JOIN rooms c ON c.chat_id = inp.chatid
+				coalesce(r.room_id, 0),
+				coalesce(r.name, ''),
+				coalesce(r.view, 'TALK'),
+				coalesce(m.emp_id, 0), 
+				coalesce(m.last_msg_read, 0),
+				coalesce(c.last_msg_id, 0)
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, empid)
+		LEFT JOIN members m ON m.emp_id = inp.empid
+		LEFT JOIN rooms r on r.room_id = m.room_id
+		LEFT JOIN msg_state c on r.room_id = c.room_id
 		`,
 		pq.Array(ptrs),
-		pq.Array(chatIDs),
+		pq.Array(empIDs),
 	)
 	if err != nil {
 		//c.Dataloader.healer.Alert("rooms:" + err.Error())
@@ -67,15 +70,13 @@ func (c *parentCategory) rooms() {
 	}
 	defer rows.Close()
 
-	var ( // каждую итерацию будем менять значения
+	var ( // Каждую итерацию будем менять значения
 		ptr chanPtr
 	)
 	for rows.Next() {
-		m := &model.Room{
-			Chat: &model.Chat{Unit: new(model.Unit)},
-		}
+		m := new(model.Room)
 
-		if err = rows.Scan(&ptr, &m.RoomID, &m.Chat.Unit.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
+		if err = rows.Scan(&ptr, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
 			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Error())
 			c.Error = err
 			return

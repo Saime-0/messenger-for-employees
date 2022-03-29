@@ -58,11 +58,11 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
-	//r.Services.Events.NewMessage(roomID, &model.Message{RoomID:      msgID, TargetMsgID: _replyTo, EmployeeID:  &model.Member{RoomID: memberID}, Type:    message.Type, Body:    input.Body})
+	//r.Services.Events.NewMessage(roomID, &model.Message{RoomID:      msgID, TargetMsgID: _replyTo, RoomID:  &model.Member{RoomID: memberID}, Type:    message.Type, Body:    input.Body})
 	go func() {
-		err := r.Subix.NotifyRoomReaders(
-			input.RoomID,
+		err := r.Subix.NotifyRoomMembers(
 			eventReadyMessage,
+			input.RoomID,
 		)
 		if err != nil {
 			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))

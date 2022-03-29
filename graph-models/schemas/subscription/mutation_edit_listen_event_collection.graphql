@@ -3,8 +3,8 @@ extend type Mutation {
 	editListenEventCollection(
 		sessionKey: String!,
 		action: EventSubjectAction!
-		targetChats: [ID!]!
+		targetRooms: [ID!]!
 		listenEvents: [EventType!]!
-	): EditListenEventCollectionResult! @goField @isAuth
+	): EditListenEventCollectionResult! @goField(forceResolver: true) @isAuth
 }
 

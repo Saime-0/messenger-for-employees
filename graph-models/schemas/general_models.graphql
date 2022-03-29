@@ -51,15 +51,15 @@ type Room {
     # for the client
     lastMessageRead: ID!
     lastMessageID: ID!
-    members: Members! @goField
+    members: Members! @goField(forceResolver: true)
 }
 type Rooms {
     rooms: [Room!]
 }
 
 type Member {
-    employee: Employee! @goField
-    room: Room! @goField
+    employee: Employee! @goField(forceResolver: true)
+    room: Room! @goField(forceResolver: true)
 }
 type Members {
     members: [Member!]
@@ -74,10 +74,10 @@ type Tags {
 }
 
 type Message {
-    room: Room! @goField
+    room: Room! @goField(forceResolver: true)
     msgID: ID!
-    employee: Employee! @goField
-    targetMsgID: Message @goField
+    employee: Employee! @goField(forceResolver: true)
+    targetMsgID: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
 }
@@ -88,13 +88,13 @@ type Messages {
 type Me {
     employee: Employee!
     personal: PersonalData!
-    rooms: Rooms! @goField
+    rooms: Rooms! @goField(forceResolver: true)
 }
 
 type ListenCollection {
     sessionKey: String!
     success: String!
-    collection: [ListenedChat!]! @goField
+    collection: [ListenedChat!]! @goField(forceResolver: true)
 }
 
 type ListenedChat {

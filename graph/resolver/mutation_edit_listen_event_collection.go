@@ -7,40 +7,37 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *mutationResolver) EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetChats []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error) {
+func (r *mutationResolver) EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("EditListenEventCollection", &bson.M{
 		"sessionKey":   sessionKey,
 		"action":       action,
-		"targetChats":  targetChats,
+		"targetRooms":  targetRooms,
 		"listenEvents": listenEvents,
 	})
 	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
-	var (
-		userMembers *[]*models.SubUser
-	)
+
 	if len(listenEvents) > len(model.AllEventType) {
 		return resp.Error(resp.ErrBadRequest, "недопустимая длина списка событий"), nil
 	}
-	targetChats = kit.GetUniqueInts(targetChats) // избавляемся от повторяющихся значений
+	targetRooms = kit.GetUniqueInts(targetRooms) // избавляемся от повторяющихся значений
 
 	if node.ValidSessionKey(sessionKey) ||
-		node.UserHasAccessToChats(clientID, &targetChats, &userMembers) {
+		node.EmployeeHasAccessToRooms(clientID, targetRooms) {
 		return node.GetError(), nil
 	}
 
-	err := r.Subix.ModifyCollection(sessionKey, *userMembers, action, listenEvents)
+	err := r.Subix.ModifyCollection(clientID, sessionKey, targetRooms, action, listenEvents)
 	if err != nil {
 		//node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrBadRequest, "не удалось обновить коллекцию"), nil

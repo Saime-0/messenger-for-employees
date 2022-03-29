@@ -3,12 +3,11 @@ package subix
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
 func (s *Subix) Sub(userID int, sessionKey Key, expAt int64) (*Client, error) {
 	_, ok := s.clients[sessionKey]
-	if ok { // если ключ сущесивует то по хорошему клиент должен повторить соединение с другим ключем
+	if ok { // если ключ существует, то по-хорошему клиент должен повторить соединение с другим ключом
 		return nil, cerrors.New("sessionKey already in use, it is not possible to create a new connection")
 	}
 
@@ -35,59 +34,58 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64) (*Client, error) {
 	return client, nil
 }
 
-var allUsefulEventtypes = model.AllEventType[1:len(model.AllEventType)]
+var allUsefulEventTypes = model.AllEventType[1:len(model.AllEventType)]
 
-func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, action model.EventSubjectAction, listenEvents []model.EventType) error {
+func (s *Subix) ModifyCollection(employeeID int, sessionKey Key, roomIDs []ID, action model.EventSubjectAction, listenEvents []model.EventType) error {
 	client, ok := s.clients[sessionKey]
-	if !ok { // если ключ сущесивует, то по-хорошему клиент должен повторить соединение с другим ключем
+	if !ok { // если ключа не существует, то клиент должен подписаться
 		return cerrors.New("no session with this key was found")
 	}
-	user := s.employees[client.EmployeeID]
+	emp := s.employees[client.EmployeeID]
 	for _, event := range listenEvents {
 		if event == model.EventTypeAll {
-			listenEvents = allUsefulEventtypes
+			listenEvents = allUsefulEventTypes
 			break
 		}
 	}
 	if action == model.EventSubjectActionAdd { // если мемберс добавляет пачку событий
-		for _, sm := range submembers {
-			member := s.CreateRoomIfNotExists(*sm.MemberID, *sm.ChatID)  // достаем мембера из активных(те на которые подписаны клиенты) нужного мембера
-			clientWithEvents, ok := member.clientsWithEvents[sessionKey] // ищем сессию нужного клиента в мемберсе
-			if !ok {                                                     // если клиент еще не прорслушивает этого участника, то заставляем сушать
+		for _, roomID := range roomIDs {
+			room := s.CreateRoomIfNotExists(roomID)                    // достаем мембера из активных(те на которые подписаны клиенты) нужного мембера
+			clientWithEvents, ok := room.clientsWithEvents[sessionKey] // ищем сессию нужного клиента в мемберсе
+			if !ok {                                                   // если клиент еще не прослушивает этого участника, то заставляем слушать
 				clientWithEvents = &ClientWithEvents{
 					Client: client,
 					Events: make(EventCollection),
 				}
-				member.clientsWithEvents[sessionKey] = clientWithEvents
+				room.clientsWithEvents[sessionKey] = clientWithEvents
 			}
 			for _, event := range listenEvents {
 				clientWithEvents.Events[event] = true // добавил тип ивента который теперь будет отправляться клиенту(прослушиваться им)
 			}
 
-			// add member to user memberings
-			user.rooms[*sm.MemberID] = member // даже если у пользователя уже есть мембер с таким id то все равно добавляем(не даст никакого эффекта)
+			// add room to emp memberings
+			emp.rooms[roomID] = room // даже если у пользователя уже есть мембер с таким id то все равно добавляем(не даст никакого эффекта)
 		}
-	}
 
-	if action == model.EventSubjectActionDelete {
-		for _, sm := range submembers {
+	} else if action == model.EventSubjectActionDelete {
+		for _, roomID := range roomIDs {
 
-			member, ok := s.rooms[*sm.MemberID]
+			room, ok := s.rooms[roomID]
 			if !ok {
-				continue // пропускаем если клиент не слушает этого участника
+				continue // пропускаем если комнаты не существует (ее никто не прослушивает)
 			} else {
-				clientWithEvents, ok := member.clientsWithEvents[sessionKey]
+				clientWithEvents, ok := room.clientsWithEvents[sessionKey]
 				if !ok {
-					break
+					break // клиент не слушает комнату, а значит и удалять ничего не нужно
 				}
 				for _, event := range listenEvents {
 					delete(clientWithEvents.Events, event)
 				}
 
-				if len(clientWithEvents.Events) == 0 { // если удалятся все события которые прослушывал клиент, то ..
-					delete(member.clientsWithEvents, sessionKey) // .. удаляем клиента из мемберса
-					if len(member.clientsWithEvents) == 0 {      // а если количесво слушающих клиентов = 0 то..
-						s.DeleteRoom(*sm.MemberID) // удаляем мембера
+				if len(clientWithEvents.Events) == 0 { // если удалятся все события которые прослушивал клиент, то ..
+					delete(room.clientsWithEvents, sessionKey) // .. Удаляем клиента из комнаты
+					if len(room.clientsWithEvents) == 0 {      // а если количество слушающих клиентов = 0 то..
+						s.DeleteRoom(roomID) // удаляем комнату
 					}
 				}
 			}
@@ -97,10 +95,6 @@ func (s *Subix) ModifyCollection(sessionKey Key, submembers []*models.SubUser, a
 	return nil
 }
 
-func (s *Subix) Unsub(sessionKey Key) error {
-	err := s.deleteClient(sessionKey)
-	if err != nil {
-		return cerrors.Wrap(err, "не удалось отписаться")
-	}
-	return nil
+func (s *Subix) Unsub(sessionKey Key) {
+	s.deleteClient(sessionKey)
 }
