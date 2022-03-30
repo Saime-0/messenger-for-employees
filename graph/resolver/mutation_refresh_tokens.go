@@ -37,7 +37,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		session *models.RefreshSession
 	)
 	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
-	sessionExpAt := kit.After(*r.Config.RefreshTokenLiftime)
+	sessionExpAt := kit.After(*r.Config.RefreshTokenLifetime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(res.CtxUserAgent).(string),
@@ -50,7 +50,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
-	tokenExpiresAt := kit.After(*r.Config.AccessTokenLiftime)
+	tokenExpiresAt := kit.After(*r.Config.AccessTokenLifetime)
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
 			EmployeeID: clientID,

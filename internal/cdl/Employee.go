@@ -19,14 +19,14 @@ type (
 )
 
 func (d *Dataloader) Employee(employeeID int) (*model.Employee, error) {
-	res := <-d.categories.User.addBaseRequest(
+	res := <-d.categories.Employee.addBaseRequest(
 		&userInp{
 			EmployeeID: employeeID,
 		},
 		new(userResult),
 	)
 	if res == nil {
-		return nil, d.categories.User.Error
+		return nil, d.categories.Employee.Error
 	}
 	return res.(*userResult).Employee, nil
 }

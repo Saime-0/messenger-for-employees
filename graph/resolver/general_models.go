@@ -5,12 +5,12 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/utils"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/http-cute-chat/internal/utils"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (r *listenCollectionResolver) Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error) {

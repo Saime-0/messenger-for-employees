@@ -13,16 +13,9 @@ var (
 	expPartOfName = regexp.MustCompile(`^([a-z]{2,16}|[а-я]{2,16})+$`)
 )
 
-func ValidateDomain(domain string) (valid bool) {
-	if (len(domain) > rules.DomainMaxLength) || (len(domain) < rules.DomainMinLength) {
-		return false
-	}
-	return true
-}
-
 func ValidateEmployeeFullName(fullName string) (valid bool) {
-	for i, word := range strings.Split(strings.ToLower(fullName), " ") {
-		if !expPartOfName.MatchString(word) || i > 1 {
+	for i, partOfName := range strings.Split(strings.ToLower(fullName), " ") {
+		if !expPartOfName.MatchString(partOfName) || i > 1 {
 			return false
 		}
 	}
@@ -35,13 +28,6 @@ func ValidatePartOfName(part string) (valid bool) {
 
 func ValidateRoomName(name string) (valid bool) {
 	return expRoomName.MatchString(name)
-}
-
-func ValidateNote(note string) (valid bool) {
-	if len(note) > rules.NoteMaxLength {
-		return false
-	}
-	return true
 }
 
 func ValidatePassword(password string) (valid bool) { // todo

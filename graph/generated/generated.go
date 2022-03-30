@@ -1126,12 +1126,7 @@ type ListenedChat {
     email: String!
     password: String!
 }
-input RegisterInput {
-    domain: String!
-    name: String!
-    email: String!
-    password: String!
-}
+
 input CreateMessageInput {
     roomID: ID!
     targetMsgID: ID
@@ -1166,12 +1161,10 @@ input FindMessages {
 #    AFTER
 #}
 
-input Rooms {
+input FindRooms {
     roomID: ID
     name: String
 }
-
-
 
 
 
@@ -1200,7 +1193,7 @@ input Rooms {
     messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_rooms.graphql", Input: `extend type Query {
-    rooms(find: Rooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
+    rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_tags.graphql", Input: `extend type Query {
     tags(params: Params): TagsResult! @goField(forceResolver: true) @isAuth
@@ -1609,7 +1602,7 @@ func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs 
 		if data, ok := tmp.(model.FindRooms); ok {
 			arg0 = data
 		} else {
-			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.Rooms`, tmp))
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.FindRooms`, tmp))
 		}
 	}
 	args["find"] = arg0
@@ -6283,53 +6276,6 @@ func (ec *executionContext) unmarshalInputParams(ctx context.Context, obj interf
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
 			it.Offset, err = ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj interface{}) (model.RegisterInput, error) {
-	var it model.RegisterInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	for k, v := range asMap {
-		switch k {
-		case "domain":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("domain"))
-			it.Domain, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "password":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

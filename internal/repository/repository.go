@@ -6,7 +6,6 @@ import (
 
 type Repositories struct {
 	Auth        *AuthRepo
-	Units       *UnitsRepo
 	Users       *UsersRepo
 	Chats       *ChatsRepo
 	Rooms       *RoomsRepo
@@ -18,7 +17,6 @@ type Repositories struct {
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
 		Auth:        NewAuthRepo(db),
-		Units:       NewUnitsRepo(db),
 		Users:       NewUsersRepo(db),
 		Chats:       NewChatsRepo(db),
 		Rooms:       NewRoomsRepo(db),

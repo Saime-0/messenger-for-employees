@@ -5,8 +5,8 @@ query_complexity_limit = 81 # the weight of the fields is indicated in the code,
 # With negative values occurs undefined behavior.
 # <key> = <seconds>
 duration_of_schedule_interval = 36000 # erases expired sessions, invites
-refresh_token_liftime = 5184000 # the normal value is 30-90 days
-access_token_liftime = 864000 # the normal value is 5-15 minutes
+refresh_token_lifetime = 5184000 # the normal value is 30-90 days
+access_token_lifetime = 864000 # the normal value is 5-15 minutes
 
 maximum_number_of_messages_per_request = 100
 max_count_rooms = 128
@@ -23,7 +23,7 @@ smtp_port = 587
 # 1 - Only console
 # 2 - Console + MongoDB
 # 3 - Only MongoDB
-logging_output = 2
+logging_output = 1
 
 # Emergency  -  system is unusable
 # Alert      -  action must be taken immediately
@@ -35,4 +35,4 @@ logging_output = 2
 # Debug      -  debug-level messages
 logging_level = 7
 
-logging_db_name = "logs"
+logging_db_name = "meem-logs"

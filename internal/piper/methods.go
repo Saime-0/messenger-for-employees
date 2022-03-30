@@ -60,19 +60,6 @@ func (n Node) ValidNameFragment(fragment string) (fail bool) {
 	return
 }
 
-func (n *Node) ValidNote(note string) (fail bool) {
-	n.SwitchMethod("ValidNote", &bson.M{
-		"note": note,
-	})
-	defer n.MethodTiming()
-
-	if !validator.ValidateNote(note) {
-		n.SetError(resp.ErrBadRequest, "недопустимое значение для заметки")
-		return true
-	}
-	return
-}
-
 func (n Node) ValidID(id int) (fail bool) {
 	n.SwitchMethod("ValidID", &bson.M{
 		"id": id,
@@ -133,25 +120,6 @@ func (n Node) ValidEmployeeFullName(fullName string) (fail bool) {
 
 	if !validator.ValidateEmployeeFullName(fullName) {
 		n.SetError(resp.ErrBadRequest, "невалидное имя")
-		return true
-	}
-	return
-}
-
-func (n Node) DomainIsFree(domain string) (fail bool) {
-	n.SwitchMethod("DomainIsFree", &bson.M{
-		"domain": domain,
-	})
-	defer n.MethodTiming()
-
-	free, err := n.repos.Units.DomainIsFree(domain)
-	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
-		return true
-	}
-	if !free {
-		n.SetError(resp.ErrBadRequest, "домен занят")
 		return true
 	}
 	return
@@ -239,12 +207,12 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 }
 
 func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) {
-	n.SwitchMethod("UserExistsByRequisites", &bson.M{
+	n.SwitchMethod("EmployeeExistsByRequisites", &bson.M{
 		"input": input,
 	})
 	defer n.MethodTiming()
 
-	exists, err := n.repos.Users.UserExistsByRequisites(input)
+	exists, err := n.repos.Users.EmployeeExistsByRequisites(input)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
@@ -297,56 +265,6 @@ func (n Node) ValidEmail(email string) (fail bool) {
 		n.SetError(resp.ErrBadRequest, "невалидный email")
 		return true
 	}
-	return
-}
-
-func (n Node) GetRegistrationSession(email, code string, regi **models.RegisterData) (fail bool) {
-	n.SwitchMethod("GetRegistrationSession", &bson.M{
-		"email": email,
-		"code":  code,
-		"regi":  regi,
-	})
-	defer n.MethodTiming()
-
-	var err error
-	*regi, err = n.repos.Users.GetRegistrationSession(email, code)
-	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
-		return true
-	}
-	if *regi == nil {
-		n.SetError(resp.ErrBadRequest, "сессии не существует")
-		return true
-	}
-	return
-}
-
-func (n Node) ValidRegisterInput(input *model.RegisterInput) (fail bool) {
-	n.SwitchMethod("ValidRegisterInput", &bson.M{
-		"input": input,
-	})
-	defer n.MethodTiming()
-
-	switch {
-	case !validator.ValidateDomain(input.Domain):
-		n.SetError(resp.ErrBadRequest, "домен не соответствует требованиям")
-		return true
-
-	case !validator.ValidateEmployeeFullName(input.Name):
-		n.SetError(resp.ErrBadRequest, "имя не соответствует требованиям")
-		return true
-
-	case !validator.ValidateEmail(input.Email):
-		n.SetError(resp.ErrBadRequest, "имеил не соответствует требованиям")
-		return true
-
-	case !validator.ValidatePassword(input.Password):
-		n.SetError(resp.ErrBadRequest, "пароль не соответствует требованиям")
-		return true
-
-	}
-
 	return
 }
 

@@ -2,12 +2,7 @@ input LoginInput {
     email: String!
     password: String!
 }
-input RegisterInput {
-    domain: String!
-    name: String!
-    email: String!
-    password: String!
-}
+
 input CreateMessageInput {
     roomID: ID!
     targetMsgID: ID
@@ -46,8 +41,6 @@ input FindRooms {
     roomID: ID
     name: String
 }
-
-
 
 
 

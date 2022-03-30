@@ -218,13 +218,6 @@ type PersonalData struct {
 	Token       string `json:"token"`
 }
 
-type RegisterInput struct {
-	Domain   string `json:"domain"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 type RemoveMember struct {
 	EmpID  int `json:"empID"`
 	RoomID int `json:"roomID"`

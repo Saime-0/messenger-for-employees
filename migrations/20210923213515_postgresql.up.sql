@@ -1,5 +1,12 @@
 create type room_type as enum ('TALK', 'BLOG');
 
+
+create function unix_utc_now(bigint DEFAULT 0) returns bigint
+    language sql
+as $$
+SELECT (date_part('epoch'::text, now()))::bigint + $1
+$$;
+
 create table admins
 (
     admin_id bigserial,
@@ -93,11 +100,6 @@ create table messages
         on delete cascade
 );
 
-create function unix_utc_now(bigint DEFAULT 0) returns bigint
-    language sql
-as $$
-SELECT (date_part('epoch'::text, now()))::bigint + $1
-$$;
 
 create function change_count_msg() returns trigger
     language plpgsql
