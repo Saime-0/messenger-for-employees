@@ -1,6 +1,7 @@
 package res
 
 const (
+	Success                                         = "success"
 	InitLogger                                      = "логгер инициализирован"
 	FailedToCreateHealer                            = "не удалось инициализировать healer"
 	FailedToPrepareHealer                           = "не удалось подготовить healer"
@@ -8,5 +9,5 @@ const (
 	ConnectionToDatabaseCouldNotBeRestored          = "не удалось восстановить соединение с базой данных"
 	ConnectionToTheLogDBHasBeenSuccessfullyRestored = "соединение с LogDB успешно восстановлено"
 	StartingLogDBConnectionRecoveryService          = "запуск службы восстановления соединения с LogDB"
-	UnexpectedError                                 = "епредвиденная ошибка"
+	UnexpectedError                                 = "непредвиденная ошибка"
 )

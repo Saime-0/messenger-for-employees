@@ -12,6 +12,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/directive"
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
+	"github.com/saime-0/http-cute-chat/internal/admin/handlers"
 	"github.com/saime-0/http-cute-chat/internal/cache"
 	"github.com/saime-0/http-cute-chat/internal/cdl"
 	"github.com/saime-0/http-cute-chat/internal/cerrors"
@@ -147,6 +148,9 @@ func main() {
 	// handlers
 	router.Handle("/", graphiql.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
+
+	// admin
+	handlers.NewAdminHandler(router, myResolver)
 
 	hlr.Info(fmt.Sprintf("Server started on %s port", *cfg.ApplicationPort))
 	err = http.ListenAndServe(":"+*cfg.ApplicationPort, router)

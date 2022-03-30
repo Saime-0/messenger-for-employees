@@ -40,3 +40,7 @@ type SubRoom struct {
 	RoomID   *int
 	IsMember bool
 }
+type RoomsAndEmployees struct {
+	RoomIDs []int
+	EmpIDs  []int
+}

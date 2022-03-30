@@ -23,7 +23,7 @@ smtp_port = 587
 # 1 - Only console
 # 2 - Console + MongoDB
 # 3 - Only MongoDB
-logging_output = 1
+logging_output = 2
 
 # Emergency  -  system is unusable
 # Alert      -  action must be taken immediately

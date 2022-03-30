@@ -32,7 +32,7 @@ type Employee {
     lastName: String!
     joinedAt: Int64!
     # for the client
-    tags: Tags!
+    tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
     employees: [Employee!]

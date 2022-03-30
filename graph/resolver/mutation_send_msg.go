@@ -20,7 +20,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("SendMsg", &bson.M{
-		"RoomID":      input.RoomID,
+		"Rooms":       input.RoomID,
 		"TargetMsgID": input.TargetMsgID,
 	})
 	defer node.MethodTiming()
@@ -46,7 +46,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		n.SwitchMethod("CreateMessage", &bson.M{
 			"TargetMsgID": message.TargetMsgID,
 			"EmployeeID":  message.EmployeeID,
-			"RoomID":      message.RoomID,
+			"Rooms":       message.RoomID,
 		})
 		defer n.MethodTiming()
 
@@ -58,7 +58,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
-	//r.Services.Events.NewMessage(roomID, &model.Message{RoomID:      msgID, TargetMsgID: _replyTo, RoomID:  &model.Member{RoomID: memberID}, Type:    message.Type, Body:    input.Body})
+	//r.Services.Events.NewMessage(roomID, &model.Message{Rooms:      msgID, TargetMsgID: _replyTo, Rooms:  &model.Member{Rooms: memberID}, Type:    message.Type, Body:    input.Body})
 	go func() {
 		err := r.Subix.NotifyRoomMembers(
 			eventReadyMessage,

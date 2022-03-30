@@ -20,7 +20,7 @@ func (h *Healer) Log(document interface{}) {
 		fmt.Printf("%#v\n", document)
 	}
 	if h.Output >= clog.Multiple {
-		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeoutMongoDB)
 		defer cancel()
 		_, err := h.db.Collection("logs").InsertOne(ctx, document)
 		h.MonitorLogger(err)

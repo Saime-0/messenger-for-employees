@@ -23,7 +23,7 @@ create table employees
     email varchar(64) not null,
     phone_number varchar(32) not null,
     joined_at bigint default unix_utc_now() not null,
-    token varchar(32) not null,
+    token varchar(64) not null,
     comment varchar(512),
     primary key (emp_id)
 );

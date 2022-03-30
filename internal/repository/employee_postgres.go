@@ -3,21 +3,22 @@ package repository
 import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/admin/request_models"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"strings"
 )
 
-type UsersRepo struct {
+type EmployeesRepo struct {
 	db *sql.DB
 }
 
-func NewUsersRepo(db *sql.DB) *UsersRepo {
-	return &UsersRepo{
+func NewEmployeesRepo(db *sql.DB) *EmployeesRepo {
+	return &EmployeesRepo{
 		db: db,
 	}
 }
 
-func (r *UsersRepo) Me(empID int) (*model.Me, error) {
+func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 	me := &model.Me{
 		Employee: new(model.Employee),
 		Personal: new(model.PersonalData),
@@ -42,15 +43,14 @@ func (r *UsersRepo) Me(empID int) (*model.Me, error) {
 		&me.Personal.PhoneNumber,
 		&me.Personal.Token,
 	)
-
 	if me.Employee.EmpID == 0 {
-		return nil, nil
+		return nil, err
 	}
 
 	return me, err
 }
 
-func (r *UsersRepo) FindEmployees(inp *model.FindEmployees) (*model.Employees, error) {
+func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employees, error) {
 	var (
 		users        = new(model.Employees)
 		fullName     []string
@@ -110,7 +110,7 @@ func (r *UsersRepo) FindEmployees(inp *model.FindEmployees) (*model.Employees, e
 	return users, nil
 }
 
-func (r UsersRepo) DeleteRefreshSession(id int) error {
+func (r EmployeesRepo) DeleteRefreshSession(id int) error {
 	err := r.db.QueryRow(`
 		DELETE FROM refresh_sessions
 	    WHERE id = $1
@@ -121,7 +121,7 @@ func (r UsersRepo) DeleteRefreshSession(id int) error {
 	return err
 }
 
-func (r *UsersRepo) EmailIsFree(email string) (free bool, err error) {
+func (r *EmployeesRepo) EmailIsFree(email string) (free bool, err error) {
 	err = r.db.QueryRow(`
 		SELECT EXISTS (
 		    SELECT 1
@@ -134,7 +134,7 @@ func (r *UsersRepo) EmailIsFree(email string) (free bool, err error) {
 	return !free, err
 }
 
-func (r *UsersRepo) EmployeeExistsByRequisites(inp *models.LoginRequisites) (exists bool, err error) {
+func (r *EmployeesRepo) EmployeeExistsByRequisites(inp *models.LoginRequisites) (exists bool, err error) {
 	err = r.db.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1
@@ -149,7 +149,7 @@ func (r *UsersRepo) EmployeeExistsByRequisites(inp *models.LoginRequisites) (exi
 
 }
 
-func (r *UsersRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (id int, err error) {
+func (r *EmployeesRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (id int, err error) {
 	err = r.db.QueryRow(`
 		SELECT emp_id
 		FROM employees
@@ -158,5 +158,21 @@ func (r *UsersRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (id i
 		inp.HashedPasswd,
 	).Scan(&id)
 
+	return
+}
+
+func (r EmployeesRepo) CreateEmployee(emp *request_models.CreateEmployee) (empID int, err error) {
+	err = r.db.QueryRow(`
+		INSERT INTO employees (first_name, last_name, email, phone_number, token, comment) 
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING emp_id
+	`,
+		emp.FirstName,
+		emp.LastName,
+		emp.Email,
+		emp.PhoneNumber,
+		emp.Token,
+		emp.Comment,
+	).Scan(&empID)
 	return
 }

@@ -17,7 +17,7 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Rooms", &bson.M{
+	node.SwitchMethod("EmployeeRooms", &bson.M{
 		"find":   find,
 		"params": params,
 	})

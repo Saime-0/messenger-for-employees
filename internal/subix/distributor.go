@@ -42,7 +42,9 @@ func (s *Subix) handleEventTypeAfterNotify(body interface{}) error {
 		}
 
 	case *model.RemoveMember:
-		delete(s.rooms[body.(*model.RemoveMember).RoomID].Empls, body.(*model.RemoveMember).EmpID)
+		for _, roomID := range body.(*model.RemoveMember).RoomIDs {
+			delete(s.rooms[roomID].Empls, body.(*model.RemoveMember).EmpID)
+		}
 	}
 
 	return nil

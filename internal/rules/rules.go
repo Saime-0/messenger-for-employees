@@ -1,11 +1,6 @@
 package rules
 
 const (
-	NameMaxLength      = 32
-	NameMinLength      = 1
-	DomainMaxLength    = 32
-	DomainMinLength    = 4
-	NoteMaxLength      = 64
 	RefreshTokenLength = 28
 	MaxLimit           = 20
 	MinPasswordLength  = 6

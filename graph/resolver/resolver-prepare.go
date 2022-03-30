@@ -63,7 +63,7 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 
 		if rs.Exp <= time.Now().Unix() {
 			// удаляю сессию, тк она уже истекла
-			err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
+			err := r.Services.Repos.Employees.DeleteRefreshSession(rs.ID)
 			if err != nil {
 				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			}
@@ -72,7 +72,7 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
 				// спланированное удаление
-				err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
+				err := r.Services.Repos.Employees.DeleteRefreshSession(rs.ID)
 				if err != nil {
 					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}

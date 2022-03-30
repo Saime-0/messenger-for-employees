@@ -131,7 +131,7 @@ func (n Node) EmailIsFree(email string) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	free, err := n.repos.Users.EmailIsFree(email)
+	free, err := n.repos.Employees.EmailIsFree(email)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
@@ -192,7 +192,7 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	//if !n.repos.Rooms.RoomExistsByID(roomID) {
+	//if !n.repos.EmployeeRooms.RoomExistsByID(roomID) {
 	exists, err := n.Dataloader.RoomExistsByID(roomID)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
@@ -212,7 +212,7 @@ func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) 
 	})
 	defer n.MethodTiming()
 
-	exists, err := n.repos.Users.EmployeeExistsByRequisites(input)
+	exists, err := n.repos.Employees.EmployeeExistsByRequisites(input)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
@@ -232,7 +232,7 @@ func (n Node) GetEmployeeIDByRequisites(input *models.LoginRequisites, employeeI
 	})
 	defer n.MethodTiming()
 
-	_uid, err := n.repos.Users.GetEmployeeIDByRequisites(input)
+	_uid, err := n.repos.Employees.GetEmployeeIDByRequisites(input)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
@@ -279,7 +279,7 @@ func (n Node) EmployeeHasAccessToRooms(employeeID int, roomIDs []int) (fail bool
 		n.SetError(resp.ErrBadRequest, "roomID is not valid")
 		return true
 	}
-	noAccessTo, err := n.repos.Chats.UserHasAccessToRooms(employeeID, roomIDs)
+	noAccessTo, err := n.repos.Rooms.EmployeeHasAccessToRooms(employeeID, roomIDs)
 	if err != nil {
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")

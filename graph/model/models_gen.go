@@ -191,7 +191,7 @@ func (Messages) IsMessagesResult() {}
 
 type NewMember struct {
 	EmpID   int   `json:"empID"`
-	RoomsID []int `json:"roomsID"`
+	RoomIDs []int `json:"roomIDs"`
 }
 
 func (NewMember) IsEventResult() {}
@@ -219,8 +219,8 @@ type PersonalData struct {
 }
 
 type RemoveMember struct {
-	EmpID  int `json:"empID"`
-	RoomID int `json:"roomID"`
+	EmpID   int   `json:"empID"`
+	RoomIDs []int `json:"roomIDs"`
 }
 
 func (RemoveMember) IsEventResult() {}

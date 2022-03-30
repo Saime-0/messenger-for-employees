@@ -5,23 +5,21 @@ import (
 )
 
 type Repositories struct {
-	Auth        *AuthRepo
-	Users       *UsersRepo
-	Chats       *ChatsRepo
-	Rooms       *RoomsRepo
-	Messages    *MessagesRepo
-	Subscribers *SubscribersRepo
-	Prepares    *PreparesRepo
+	Auth      *AuthRepo
+	Employees *EmployeesRepo
+	Tags      *TagsRepo
+	Rooms     *RoomsRepo
+	Messages  *MessagesRepo
+	Prepares  *PreparesRepo
 }
 
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
-		Auth:        NewAuthRepo(db),
-		Users:       NewUsersRepo(db),
-		Chats:       NewChatsRepo(db),
-		Rooms:       NewRoomsRepo(db),
-		Messages:    NewMessagesRepo(db),
-		Subscribers: NewSubscribersRepo(db),
-		Prepares:    NewPreparesRepo(db),
+		Auth:      NewAuthRepo(db),
+		Employees: NewEmployeesRepo(db),
+		Tags:      NewTagsRepo(db),
+		Rooms:     NewRoomsRepo(db),
+		Messages:  NewMessagesRepo(db),
+		Prepares:  NewPreparesRepo(db),
 	}
 }

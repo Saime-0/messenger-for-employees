@@ -25,12 +25,12 @@ type UpdateEmpLastName {
 
 type GiveTagToEmp {
 	empID: ID!
-	tagsID: [ID!]
+	tagsID: [ID!]!
 }
 
 type TakeTagFromEmp {
 	empID: ID!
-	tagsID: [ID!]
+	tagsID: [ID!]!
 }
 
 type RemoveTagFromEmp {
@@ -40,12 +40,12 @@ type RemoveTagFromEmp {
 
 type NewMember {
 	empID: ID!
-	roomsID: [ID!]
+	roomIDs: [ID!]!
 }
 
 type RemoveMember {
 	empID: ID!
-	roomID: ID!
+	roomIDs: [ID!]!
 }
 
 type CreateTag {
@@ -60,7 +60,7 @@ type UpdateTag {
 }
 
 type DeleteTag {
-	tagID: [ID!]
+	tagID: [ID!]!
 }
 
 type UpdateRoomName {
@@ -70,7 +70,7 @@ type UpdateRoomName {
 
 
 type DeleteRoom {
-	roomsID: [ID!]
+	roomsID: [ID!]!
 }
 
 

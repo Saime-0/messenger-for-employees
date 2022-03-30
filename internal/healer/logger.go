@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	CouldNotConnectToDb = "could not connect to db"
-	ConnectionTimeout   = time.Millisecond * 1500
+	CouldNotConnectToDb      = "could not connect to db"
+	ConnectionTimeoutMongoDB = time.Millisecond * 1500
 )
 
 func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
@@ -47,7 +47,7 @@ func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 }
 
 func (h *Healer) PingDB() error {
-	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeoutMongoDB)
 	defer cancel()
 	return h.client.Ping(ctx, readpref.Primary())
 }

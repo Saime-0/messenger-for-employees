@@ -75,7 +75,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				err := r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+				err := r.Services.Repos.Employees.DeleteRefreshSession(sessionID)
 				if err != nil {
 					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}

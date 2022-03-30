@@ -52,7 +52,6 @@ func (c *parentCategory) rooms() {
 				coalesce(r.room_id, 0),
 				coalesce(r.name, ''),
 				coalesce(r.view, 'TALK'),
-				coalesce(m.emp_id, 0), 
 				coalesce(m.last_msg_read, 0),
 				coalesce(c.last_msg_id, 0)
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, empid)

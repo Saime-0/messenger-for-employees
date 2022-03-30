@@ -9,6 +9,7 @@ type Categories struct {
 	RoomExistsByID       *parentCategory
 	MessageExists        *parentCategory
 	Members              *parentCategory
+	Tags                 *parentCategory
 }
 
 func (d *Dataloader) ConfigureDataloader() {
@@ -21,7 +22,14 @@ func (d *Dataloader) ConfigureDataloader() {
 		RoomExistsByID:       d.newRoomExistsByIDCategory(),
 		MessageExists:        d.newMessageExistsCategory(),
 		Members:              d.newMessageExistsCategory(),
+		Tags:                 d.newTagsCategory(),
 	}
+}
+
+func (d *Dataloader) newTagsCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.tags
+	return c
 }
 
 func (d *Dataloader) newMembersCategory() *parentCategory {

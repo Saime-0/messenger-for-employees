@@ -37,6 +37,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Employee() EmployeeResolver
 	ListenCollection() ListenCollectionResolver
 	Me() MeResolver
 	Member() MemberResolver
@@ -137,7 +138,7 @@ type ComplexityRoot struct {
 
 	NewMember struct {
 		EmpID   func(childComplexity int) int
-		RoomsID func(childComplexity int) int
+		RoomIDs func(childComplexity int) int
 	}
 
 	NewMessage struct {
@@ -164,8 +165,8 @@ type ComplexityRoot struct {
 	}
 
 	RemoveMember struct {
-		EmpID  func(childComplexity int) int
-		RoomID func(childComplexity int) int
+		EmpID   func(childComplexity int) int
+		RoomIDs func(childComplexity int) int
 	}
 
 	RemoveTagFromEmp struct {
@@ -243,6 +244,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type EmployeeResolver interface {
+	Tags(ctx context.Context, obj *model.Employee) (*model.Tags, error)
+}
 type ListenCollectionResolver interface {
 	Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error)
 }
@@ -573,12 +577,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMember.EmpID(childComplexity), true
 
-	case "NewMember.roomsID":
-		if e.complexity.NewMember.RoomsID == nil {
+	case "NewMember.roomIDs":
+		if e.complexity.NewMember.RoomIDs == nil {
 			break
 		}
 
-		return e.complexity.NewMember.RoomsID(childComplexity), true
+		return e.complexity.NewMember.RoomIDs(childComplexity), true
 
 	case "NewMessage.body":
 		if e.complexity.NewMessage.Body == nil {
@@ -705,12 +709,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RemoveMember.EmpID(childComplexity), true
 
-	case "RemoveMember.roomID":
-		if e.complexity.RemoveMember.RoomID == nil {
+	case "RemoveMember.roomIDs":
+		if e.complexity.RemoveMember.RoomIDs == nil {
 			break
 		}
 
-		return e.complexity.RemoveMember.RoomID(childComplexity), true
+		return e.complexity.RemoveMember.RoomIDs(childComplexity), true
 
 	case "RemoveTagFromEmp.empID":
 		if e.complexity.RemoveTagFromEmp.EmpID == nil {
@@ -1053,7 +1057,7 @@ type Employee {
     lastName: String!
     joinedAt: Int64!
     # for the client
-    tags: Tags!
+    tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
     employees: [Employee!]
@@ -1325,12 +1329,12 @@ type UpdateEmpLastName {
 
 type GiveTagToEmp {
 	empID: ID!
-	tagsID: [ID!]
+	tagsID: [ID!]!
 }
 
 type TakeTagFromEmp {
 	empID: ID!
-	tagsID: [ID!]
+	tagsID: [ID!]!
 }
 
 type RemoveTagFromEmp {
@@ -1340,12 +1344,12 @@ type RemoveTagFromEmp {
 
 type NewMember {
 	empID: ID!
-	roomsID: [ID!]
+	roomIDs: [ID!]!
 }
 
 type RemoveMember {
 	empID: ID!
-	roomID: ID!
+	roomIDs: [ID!]!
 }
 
 type CreateTag {
@@ -1360,7 +1364,7 @@ type UpdateTag {
 }
 
 type DeleteTag {
-	tagID: [ID!]
+	tagID: [ID!]!
 }
 
 type UpdateRoomName {
@@ -1370,7 +1374,7 @@ type UpdateRoomName {
 
 
 type DeleteRoom {
-	roomsID: [ID!]
+	roomsID: [ID!]!
 }
 
 
@@ -1880,11 +1884,14 @@ func (ec *executionContext) _DeleteRoom_roomsID(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalOID2ᚕintᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeleteTag_tagID(ctx context.Context, field graphql.CollectedField, obj *model.DeleteTag) (ret graphql.Marshaler) {
@@ -1912,11 +1919,14 @@ func (ec *executionContext) _DeleteTag_tagID(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalOID2ᚕintᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Employee_empID(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
@@ -2070,14 +2080,14 @@ func (ec *executionContext) _Employee_tags(ctx context.Context, field graphql.Co
 		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
+		return ec.resolvers.Employee().Tags(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2186,11 +2196,14 @@ func (ec *executionContext) _GiveTagToEmp_tagsID(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalOID2ᚕintᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListenCollection_sessionKey(ctx context.Context, field graphql.CollectedField, obj *model.ListenCollection) (ret graphql.Marshaler) {
@@ -3057,7 +3070,7 @@ func (ec *executionContext) _NewMember_empID(ctx context.Context, field graphql.
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewMember_roomsID(ctx context.Context, field graphql.CollectedField, obj *model.NewMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewMember_roomIDs(ctx context.Context, field graphql.CollectedField, obj *model.NewMember) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3075,18 +3088,21 @@ func (ec *executionContext) _NewMember_roomsID(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RoomsID, nil
+		return obj.RoomIDs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalOID2ᚕintᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMessage_msgID(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
@@ -3810,7 +3826,7 @@ func (ec *executionContext) _RemoveMember_empID(ctx context.Context, field graph
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RemoveMember_roomID(ctx context.Context, field graphql.CollectedField, obj *model.RemoveMember) (ret graphql.Marshaler) {
+func (ec *executionContext) _RemoveMember_roomIDs(ctx context.Context, field graphql.CollectedField, obj *model.RemoveMember) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3828,7 +3844,7 @@ func (ec *executionContext) _RemoveMember_roomID(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RoomID, nil
+		return obj.RoomIDs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3840,9 +3856,9 @@ func (ec *executionContext) _RemoveMember_roomID(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RemoveTagFromEmp_empID(ctx context.Context, field graphql.CollectedField, obj *model.RemoveTagFromEmp) (ret graphql.Marshaler) {
@@ -4473,11 +4489,14 @@ func (ec *executionContext) _TakeTagFromEmp_tagsID(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]int)
 	fc.Result = res
-	return ec.marshalOID2ᚕintᚄ(ctx, field.Selections, res)
+	return ec.marshalNID2ᚕintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TokenExpired_message(ctx context.Context, field graphql.CollectedField, obj *model.TokenExpired) (ret graphql.Marshaler) {
@@ -6752,6 +6771,9 @@ func (ec *executionContext) _DeleteRoom(ctx context.Context, sel ast.SelectionSe
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6780,6 +6802,9 @@ func (ec *executionContext) _DeleteTag(ctx context.Context, sel ast.SelectionSet
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6809,7 +6834,7 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "firstName":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -6819,7 +6844,7 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "lastName":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -6829,7 +6854,7 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "joinedAt":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -6839,18 +6864,28 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "tags":
+			field := field
+
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Employee_tags(ctx, field, obj)
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Employee_tags(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
 
-			out.Values[i] = innerFunc(ctx)
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6917,6 +6952,9 @@ func (ec *executionContext) _GiveTagToEmp(ctx context.Context, sel ast.Selection
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7406,13 +7444,16 @@ func (ec *executionContext) _NewMember(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "roomsID":
+		case "roomIDs":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._NewMember_roomsID(ctx, field, obj)
+				return ec._NewMember_roomIDs(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7732,9 +7773,9 @@ func (ec *executionContext) _RemoveMember(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "roomID":
+		case "roomIDs":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._RemoveMember_roomID(ctx, field, obj)
+				return ec._RemoveMember_roomIDs(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -8101,6 +8142,9 @@ func (ec *executionContext) _TakeTagFromEmp(ctx context.Context, sel ast.Selecti
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9219,6 +9263,10 @@ func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcut
 	return ec._Tag(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTags2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐTags(ctx context.Context, sel ast.SelectionSet, v model.Tags) graphql.Marshaler {
+	return ec._Tags(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNTags2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐTags(ctx context.Context, sel ast.SelectionSet, v *model.Tags) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9555,44 +9603,6 @@ func (ec *executionContext) marshalOEmployee2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋht
 
 	}
 	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOID2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]int, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNID2int(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOID2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNID2int(ctx, sel, v[i])
-	}
 
 	for _, e := range ret {
 		if e == graphql.Null {

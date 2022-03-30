@@ -23,14 +23,14 @@ func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.T
 	defer node.MethodTiming()
 
 	var (
-	//clientID = utils.GetAuthDataFromCtx(ctx).RoomID
+	//clientID = utils.GetAuthDataFromCtx(ctx).Rooms
 	)
 
 	if node.ValidParams(&params) {
 		return node.GetError(), nil
 	}
 
-	tags, err := r.Services.Repos.Chats.Tags(params)
+	tags, err := r.Services.Repos.Tags.Tags(params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil

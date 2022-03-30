@@ -5,13 +5,30 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+func (r *employeeResolver) Tags(ctx context.Context, obj *model.Employee) (*model.Tags, error) {
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Employee.Tags", &bson.M{
+		"employeeID (obj.EmpID)": obj.EmpID,
+	})
+	defer node.MethodTiming()
+
+	rooms, err := r.Dataloader.Tags(obj.EmpID)
+	if err != nil {
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("ошибка при попытке получить данные")
+	}
+
+	return rooms, nil
+}
 
 func (r *listenCollectionResolver) Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error) {
 	collection := r.Subix.ClientCollection(obj.SessionKey)
@@ -22,16 +39,12 @@ func (r *meResolver) Rooms(ctx context.Context, obj *model.Me) (*model.Rooms, er
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Me.Rooms", &bson.M{
+	node.SwitchMethod("Me.EmployeeRooms", &bson.M{
 		"employeeID (obj.Employee.EmpID)": obj.Employee.EmpID,
 	})
 	defer node.MethodTiming()
 
-	var (
-		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
-	)
-
-	rooms, err := r.Dataloader.Rooms(clientID)
+	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return nil, cerrors.New("ошибка при попытке получить данные")
@@ -63,7 +76,7 @@ func (r *memberResolver) Room(ctx context.Context, obj *model.Member) (*model.Ro
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Member.Room", &bson.M{
-		"roomID (obj.Room.RoomID)": obj.Room.RoomID,
+		"roomID (obj.Room.Rooms)": obj.Room.RoomID,
 	})
 	defer node.MethodTiming()
 
@@ -83,7 +96,7 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Message.Room", &bson.M{
-		"roomID (obj.Room.RoomID)": obj.Room.RoomID,
+		"roomID (obj.Room.Rooms)": obj.Room.RoomID,
 	})
 	defer node.MethodTiming()
 
@@ -139,7 +152,7 @@ func (r *roomResolver) Members(ctx context.Context, obj *model.Room) (*model.Mem
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Room.Members", &bson.M{
-		"roomID (obj.RoomID)": obj.RoomID,
+		"roomID (obj.Rooms)": obj.RoomID,
 	})
 	defer node.MethodTiming()
 
@@ -151,6 +164,9 @@ func (r *roomResolver) Members(ctx context.Context, obj *model.Room) (*model.Mem
 
 	return members, nil
 }
+
+// Employee returns generated.EmployeeResolver implementation.
+func (r *Resolver) Employee() generated.EmployeeResolver { return &employeeResolver{r} }
 
 // ListenCollection returns generated.ListenCollectionResolver implementation.
 func (r *Resolver) ListenCollection() generated.ListenCollectionResolver {
@@ -169,6 +185,7 @@ func (r *Resolver) Message() generated.MessageResolver { return &messageResolver
 // Room returns generated.RoomResolver implementation.
 func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
+type employeeResolver struct{ *Resolver }
 type listenCollectionResolver struct{ *Resolver }
 type meResolver struct{ *Resolver }
 type memberResolver struct{ *Resolver }

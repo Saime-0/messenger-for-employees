@@ -73,7 +73,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && sessionExpAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				err := r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+				err := r.Services.Repos.Employees.DeleteRefreshSession(sessionID)
 				if err != nil {
 					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}
