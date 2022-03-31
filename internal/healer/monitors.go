@@ -2,7 +2,7 @@ package healer
 
 import (
 	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/res"
 )
 
 func (h Healer) MonitorLogger(err error) {

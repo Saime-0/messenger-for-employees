@@ -79,24 +79,25 @@ type CreateMessageInput struct {
 	Body        string `json:"body"`
 }
 
-type CreateTag struct {
-	TagID int    `json:"tagID"`
-	Name  string `json:"name"`
+type DropRoom struct {
+	RoomID int `json:"roomID"`
 }
 
-func (CreateTag) IsEventResult() {}
+func (DropRoom) IsEventResult() {}
 
-type DeleteRoom struct {
-	RoomsID []int `json:"roomsID"`
+type DropTag struct {
+	TagID int `json:"tagID"`
 }
 
-func (DeleteRoom) IsEventResult() {}
+func (DropTag) IsEventResult() {}
 
-type DeleteTag struct {
-	TagID []int `json:"tagID"`
+type EmpTagAction struct {
+	Action Action `json:"action"`
+	EmpID  int    `json:"empID"`
+	TagIDs []int  `json:"tagIDs"`
 }
 
-func (DeleteTag) IsEventResult() {}
+func (EmpTagAction) IsEventResult() {}
 
 type Employee struct {
 	EmpID     int    `json:"empID"`
@@ -132,13 +133,6 @@ type FindRooms struct {
 	Name   *string `json:"name"`
 }
 
-type GiveTagToEmp struct {
-	EmpID  int   `json:"empID"`
-	TagsID []int `json:"tagsID"`
-}
-
-func (GiveTagToEmp) IsEventResult() {}
-
 type ListenCollection struct {
 	SessionKey string          `json:"sessionKey"`
 	Success    string          `json:"success"`
@@ -170,6 +164,14 @@ type Member struct {
 	Room     *Room     `json:"room"`
 }
 
+type MemberAction struct {
+	Action  Action `json:"action"`
+	EmpID   int    `json:"empID"`
+	RoomIDs []int  `json:"RoomIDs"`
+}
+
+func (MemberAction) IsEventResult() {}
+
 type Members struct {
 	Members []*Member `json:"members"`
 }
@@ -188,13 +190,6 @@ type Messages struct {
 }
 
 func (Messages) IsMessagesResult() {}
-
-type NewMember struct {
-	EmpID   int   `json:"empID"`
-	RoomIDs []int `json:"roomIDs"`
-}
-
-func (NewMember) IsEventResult() {}
 
 type NewMessage struct {
 	MsgID       int    `json:"msgID"`
@@ -217,20 +212,6 @@ type PersonalData struct {
 	PhoneNumber string `json:"phoneNumber"`
 	Token       string `json:"token"`
 }
-
-type RemoveMember struct {
-	EmpID   int   `json:"empID"`
-	RoomIDs []int `json:"roomIDs"`
-}
-
-func (RemoveMember) IsEventResult() {}
-
-type RemoveTagFromEmp struct {
-	EmpID int `json:"empID"`
-	TagID int `json:"tagID"`
-}
-
-func (RemoveTagFromEmp) IsEventResult() {}
 
 type Room struct {
 	RoomID          int      `json:"roomID"`
@@ -271,13 +252,6 @@ type Tags struct {
 
 func (Tags) IsTagsResult() {}
 
-type TakeTagFromEmp struct {
-	EmpID  int   `json:"empID"`
-	TagsID []int `json:"tagsID"`
-}
-
-func (TakeTagFromEmp) IsEventResult() {}
-
 type TokenExpired struct {
 	Message string `json:"message"`
 }
@@ -292,33 +266,46 @@ type TokenPair struct {
 func (TokenPair) IsLoginResult()         {}
 func (TokenPair) IsRefreshTokensResult() {}
 
-type UpdateEmpFirstName struct {
-	EmpID int    `json:"empID"`
-	Val   string `json:"val"`
+type Action string
+
+const (
+	ActionAdd Action = "ADD"
+	ActionDel Action = "DEL"
+)
+
+var AllAction = []Action{
+	ActionAdd,
+	ActionDel,
 }
 
-func (UpdateEmpFirstName) IsEventResult() {}
-
-type UpdateEmpLastName struct {
-	EmpID int    `json:"empID"`
-	Val   string `json:"val"`
+func (e Action) IsValid() bool {
+	switch e {
+	case ActionAdd, ActionDel:
+		return true
+	}
+	return false
 }
 
-func (UpdateEmpLastName) IsEventResult() {}
-
-type UpdateRoomName struct {
-	RoomID int    `json:"roomID"`
-	Name   string `json:"name"`
+func (e Action) String() string {
+	return string(e)
 }
 
-func (UpdateRoomName) IsEventResult() {}
+func (e *Action) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
 
-type UpdateTag struct {
-	TagID int    `json:"tagID"`
-	Name  string `json:"name"`
+	*e = Action(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Action", str)
+	}
+	return nil
 }
 
-func (UpdateTag) IsEventResult() {}
+func (e Action) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
 
 type ActionType string
 
@@ -405,44 +392,28 @@ func (e EventSubjectAction) MarshalGQL(w io.Writer) {
 type EventType string
 
 const (
-	EventTypeAll                EventType = "all"
-	EventTypeNewMessage         EventType = "NewMessage"
-	EventTypeUpdateEmpFirstName EventType = "UpdateEmpFirstName"
-	EventTypeUpdateEmpLastName  EventType = "UpdateEmpLastName"
-	EventTypeGiveTagToEmp       EventType = "GiveTagToEmp"
-	EventTypeTakeTagFromEmp     EventType = "TakeTagFromEmp"
-	EventTypeRemoveTagFromEmp   EventType = "RemoveTagFromEmp"
-	EventTypeNewMember          EventType = "NewMember"
-	EventTypeRemoveMember       EventType = "RemoveMember"
-	EventTypeCreateTag          EventType = "CreateTag"
-	EventTypeUpdateTag          EventType = "UpdateTag"
-	EventTypeDeleteTag          EventType = "DeleteTag"
-	EventTypeUpdateRoomName     EventType = "UpdateRoomName"
-	EventTypeDeleteRoom         EventType = "DeleteRoom"
-	EventTypeTokenExpired       EventType = "TokenExpired"
+	EventTypeAll          EventType = "all"
+	EventTypeNewMessage   EventType = "NewMessage"
+	EventTypeDropTag      EventType = "DropTag"
+	EventTypeEmpTagAction EventType = "EmpTagAction"
+	EventTypeMemberAction EventType = "MemberAction"
+	EventTypeDropRoom     EventType = "DropRoom"
+	EventTypeTokenExpired EventType = "TokenExpired"
 )
 
 var AllEventType = []EventType{
 	EventTypeAll,
 	EventTypeNewMessage,
-	EventTypeUpdateEmpFirstName,
-	EventTypeUpdateEmpLastName,
-	EventTypeGiveTagToEmp,
-	EventTypeTakeTagFromEmp,
-	EventTypeRemoveTagFromEmp,
-	EventTypeNewMember,
-	EventTypeRemoveMember,
-	EventTypeCreateTag,
-	EventTypeUpdateTag,
-	EventTypeDeleteTag,
-	EventTypeUpdateRoomName,
-	EventTypeDeleteRoom,
+	EventTypeDropTag,
+	EventTypeEmpTagAction,
+	EventTypeMemberAction,
+	EventTypeDropRoom,
 	EventTypeTokenExpired,
 }
 
 func (e EventType) IsValid() bool {
 	switch e {
-	case EventTypeAll, EventTypeNewMessage, EventTypeUpdateEmpFirstName, EventTypeUpdateEmpLastName, EventTypeGiveTagToEmp, EventTypeTakeTagFromEmp, EventTypeRemoveTagFromEmp, EventTypeNewMember, EventTypeRemoveMember, EventTypeCreateTag, EventTypeUpdateTag, EventTypeDeleteTag, EventTypeUpdateRoomName, EventTypeDeleteRoom, EventTypeTokenExpired:
+	case EventTypeAll, EventTypeNewMessage, EventTypeDropTag, EventTypeEmpTagAction, EventTypeMemberAction, EventTypeDropRoom, EventTypeTokenExpired:
 		return true
 	}
 	return false

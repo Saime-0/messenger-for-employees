@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/utils"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
 	"reflect"
 )
 

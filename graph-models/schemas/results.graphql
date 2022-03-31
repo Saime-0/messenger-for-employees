@@ -40,18 +40,11 @@ union EditListenEventCollectionResult =
 
 union EventResult =
     | NewMessage
-    | UpdateEmpFirstName
-    | UpdateEmpLastName
-    | GiveTagToEmp
-    | TakeTagFromEmp
-    | RemoveTagFromEmp
-    | NewMember
-    | RemoveMember
-    | CreateTag
-    | UpdateTag
-    | DeleteTag
-    | UpdateRoomName
-    | DeleteRoom
+    | DropTag
+    | EmpTagAction
+    | MemberAction
+    | DropRoom
+
     | TokenExpired
 
 
@@ -59,18 +52,10 @@ enum EventType {
     all
 
     NewMessage
-    UpdateEmpFirstName
-    UpdateEmpLastName
-    GiveTagToEmp
-    TakeTagFromEmp
-    RemoveTagFromEmp
-    NewMember
-    RemoveMember
-    CreateTag
-    UpdateTag
-    DeleteTag
-    UpdateRoomName
-    DeleteRoom
+    DropTag
+    EmpTagAction
+    MemberAction
+    DropRoom
 
     TokenExpired
 }

@@ -2,7 +2,7 @@ package store
 
 import (
 	"database/sql"
-	"github.com/saime-0/http-cute-chat/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/config"
 )
 
 func InitDB(cfg *config.Config2) (*sql.DB, error) {

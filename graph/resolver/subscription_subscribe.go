@@ -5,10 +5,11 @@ package resolver
 
 import (
 	"context"
+	"log"
 
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/utils"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -48,6 +49,7 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 		<-ctx.Done()
 		// client is down
 		r.Subix.Unsub(sessionKey)
+		log.Printf("удаляю клиента") // debug
 	}()
 
 	return client.Ch, nil

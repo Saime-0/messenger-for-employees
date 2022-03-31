@@ -1,7 +1,7 @@
 package healer
 
 import (
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 )
 
 func (h *Healer) prepareHealer() (err error) {

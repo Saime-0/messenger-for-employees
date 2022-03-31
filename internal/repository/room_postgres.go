@@ -3,9 +3,9 @@ package repository
 import (
 	"database/sql"
 	"github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/admin/request_models"
-	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
+	"github.com/saime-0/messenger-for-employee/internal/models"
 )
 
 type RoomsRepo struct {
@@ -203,9 +203,19 @@ func (r RoomsRepo) CreateRoom(room *request_models.CreateRoom) (roomID int, err 
 		INSERT INTO rooms (name, view) VALUES ($1, $2)
 		RETURNING room_id
 	`,
-		room,
+		room.Name,
 		room.View,
 	).Scan(&roomID)
+	return
+}
+
+func (r RoomsRepo) DropRoom(room *request_models.DropRoom) (err error) {
+	err = r.db.QueryRow(`
+		DELETE FROM rooms
+		WHERE room_id = $1
+	`,
+		room.RoomID,
+	).Err()
 	return
 }
 
@@ -224,7 +234,7 @@ func (r RoomsRepo) EmployeesIsNotMember(roomID int, empIDs ...int) (empIsMember 
 	return
 }
 
-func (r RoomsRepo) AddEmployeesToRoom(inp *request_models.AddEmployeeToRooms) (err error) {
+func (r RoomsRepo) AddEmployeeToRoom(inp *request_models.AddEmployeeToRooms) (err error) {
 	err = r.db.QueryRow(`
 			WITH "except"(room_id) AS (
 			    SELECT room_id
@@ -250,5 +260,30 @@ func (r RoomsRepo) KickEmployeesFromRoom(inp *request_models.AddOrDeleteEmployee
 		pq.Array(inp.Rooms),
 		pq.Array(inp.Employees),
 	).Err()
+	return
+}
+
+func (r RoomsRepo) RoomMembersID(roomID int) (employeeIDs []int, err error) {
+	rows, err := r.db.Query(`
+		SELECT emp_id
+		FROM members
+		WHERE room_id = $1
+	`,
+		roomID,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var empID int
+		if err = rows.Scan(&empID); err != nil {
+			return nil, err
+		}
+
+		employeeIDs = append(employeeIDs, empID)
+	}
+
 	return
 }

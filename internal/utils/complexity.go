@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/saime-0/http-cute-chat/graph/generated"
+import "github.com/saime-0/messenger-for-employee/graph/generated"
 
 func add(v int) func(childComplexity int) int {
 	return func(childComplexity int) int {

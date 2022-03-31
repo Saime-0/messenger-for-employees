@@ -1,18 +1,19 @@
 package subix
 
 import (
-	"fmt"
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"strings"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
+	"log"
 )
 
-func (s *Subix) writeToRoom(body model.EventResult, roomIDs ...int) {
+func (s *Subix) writeToRoom(ignoreEventCollection bool, body model.EventResult, roomIDs ...int) {
 	for _, roomID := range roomIDs {
 		room, ok := s.rooms[roomID]
 		if !ok {
 			continue
 		}
 		s.writeToClientsWithEvents(
+			ignoreEventCollection,
 			room.clientsWithEvents,
 			body,
 			getEventTypeByEventResult(body),
@@ -28,8 +29,9 @@ func (s *Subix) writeToEmployees(body model.EventResult, empIDs ...int) {
 		if !ok {
 			continue
 		}
+
 		for _, client := range emp.clients {
-			// у клиента нет набора ивентов которые он хочет получать
+			// У клиента нет набора ивентов которые он хочет получать
 			// они есть только у участников, тк для каждой отдельной комнаты можно установить свою коллекцию,
 			// а остальные ивенты, не связанные с комнатами, клиенты получают обязательно (прим. R)
 			s.writeToClient(
@@ -44,11 +46,14 @@ func (s *Subix) writeToEmployees(body model.EventResult, empIDs ...int) {
 	}
 }
 
-func (s *Subix) writeToClientsWithEvents(clientsWithEvents ClientsWithEvents, body model.EventResult, eventType model.EventType) {
+func (s *Subix) writeToClientsWithEvents(ignoreEventCollection bool, clientsWithEvents ClientsWithEvents, body model.EventResult, eventType model.EventType) {
 	for _, clientWithEvents := range clientsWithEvents {
-		if _, ok := clientWithEvents.Events[eventType]; !ok { // если он не слушает эти события, то..
-			continue // ..и слать их ему не надо, просто скипаем этого клиента
+		if !ignoreEventCollection {
+			if _, ok := clientWithEvents.Events[eventType]; !ok { // если он не слушает эти события, то...
+				continue // ...и слать их ему не надо, просто пропускаем этого клиента
+			}
 		}
+
 		s.writeToClient(
 			clientWithEvents.Client,
 			&model.SubscriptionBody{
@@ -60,6 +65,7 @@ func (s *Subix) writeToClientsWithEvents(clientsWithEvents ClientsWithEvents, bo
 }
 
 func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
+	log.Printf("%s client: %#v", utils.GetCallerPos(), client) // debug
 	if (*client).marked {
 		return
 	}
@@ -72,46 +78,18 @@ func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
 	}
 }
 
-func getEventType(body model.EventResult) string {
-	bodyType := fmt.Sprintf("%T", body)
-	dot := strings.LastIndex(
-		bodyType,
-		".",
-	)
-	if dot == -1 {
-		panic("invalid index")
-	}
-	return strings.ToUpper(bodyType[dot+1:])
-}
-
 func getEventTypeByEventResult(body model.EventResult) model.EventType {
 	switch body.(type) {
 	case *model.NewMessage:
 		return model.EventTypeNewMessage
-	case *model.UpdateEmpFirstName:
-		return model.EventTypeUpdateEmpFirstName
-	case *model.UpdateEmpLastName:
-		return model.EventTypeUpdateEmpLastName
-	case *model.GiveTagToEmp:
-		return model.EventTypeGiveTagToEmp
-	case *model.TakeTagFromEmp:
-		return model.EventTypeTakeTagFromEmp
-	case *model.RemoveTagFromEmp:
-		return model.EventTypeRemoveTagFromEmp
-	case *model.NewMember:
-		return model.EventTypeNewMember
-	case *model.RemoveMember:
-		return model.EventTypeRemoveMember
-	case *model.CreateTag:
-		return model.EventTypeCreateTag
-	case *model.UpdateTag:
-		return model.EventTypeUpdateTag
-	case *model.DeleteTag:
-		return model.EventTypeDeleteTag
-	case *model.UpdateRoomName:
-		return model.EventTypeUpdateRoomName
-	case *model.DeleteRoom:
-		return model.EventTypeDeleteRoom
+	case *model.DropTag:
+		return model.EventTypeDropTag
+	case *model.EmpTagAction:
+		return model.EventTypeEmpTagAction
+	case *model.MemberAction:
+		return model.EventTypeMemberAction
+	case *model.DropRoom:
+		return model.EventTypeDropRoom
 	case *model.TokenExpired:
 		return model.EventTypeTokenExpired
 	default:

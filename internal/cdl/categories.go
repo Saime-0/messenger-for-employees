@@ -21,7 +21,7 @@ func (d *Dataloader) ConfigureDataloader() {
 		Room:                 d.newRoomCategory(),
 		RoomExistsByID:       d.newRoomExistsByIDCategory(),
 		MessageExists:        d.newMessageExistsCategory(),
-		Members:              d.newMessageExistsCategory(),
+		Members:              d.newMembersCategory(),
 		Tags:                 d.newTagsCategory(),
 	}
 }
@@ -34,7 +34,7 @@ func (d *Dataloader) newTagsCategory() *parentCategory {
 
 func (d *Dataloader) newMembersCategory() *parentCategory {
 	c := d.newParentCategory()
-	c.LoadFn = c.messageExists
+	c.LoadFn = c.members
 	return c
 }
 

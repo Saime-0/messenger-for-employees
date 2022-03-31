@@ -2,11 +2,11 @@ package piper
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/cdl"
-	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/healer"
-	"github.com/saime-0/http-cute-chat/internal/repository"
-	"github.com/saime-0/http-cute-chat/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/cdl"
+	"github.com/saime-0/messenger-for-employee/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
+	"github.com/saime-0/messenger-for-employee/internal/repository"
+	"github.com/saime-0/messenger-for-employee/internal/res"
 )
 
 type Pipeline struct {

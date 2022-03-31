@@ -2,8 +2,8 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/clog"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/clog"
 	"os"
 )
 

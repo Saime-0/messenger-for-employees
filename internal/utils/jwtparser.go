@@ -3,8 +3,8 @@ package utils
 import (
 	"context"
 	"github.com/robbert229/jwt"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/res"
 )
 
 type TokenData struct {

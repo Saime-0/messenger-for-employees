@@ -1,10 +1,10 @@
 package resolver
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"time"
 )
 

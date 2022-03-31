@@ -6,10 +6,10 @@ package resolver
 import (
 	"context"
 
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/resp"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

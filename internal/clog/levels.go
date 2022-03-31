@@ -1,6 +1,6 @@
 package clog
 
-import "github.com/saime-0/http-cute-chat/internal/cerrors"
+import "github.com/saime-0/messenger-for-employee/internal/cerrors"
 
 type LogLevel uint8
 

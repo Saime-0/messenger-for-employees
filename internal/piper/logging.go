@@ -2,7 +2,7 @@ package piper
 
 import (
 	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/clog"
+	"github.com/saime-0/messenger-for-employee/internal/clog"
 )
 
 type LoggingRow struct {

@@ -1,8 +1,8 @@
 package subix
 
 import (
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 )
 
 type (
@@ -13,7 +13,18 @@ type (
 // NotifyRoomMembers клиенты получат только те ивенты на которые они подписались
 func (s *Subix) NotifyRoomMembers(body model.EventResult, rooms ...ID) error {
 
-	s.writeToRoom(body.(model.EventResult), rooms...)
+	s.writeToRoom(false, body.(model.EventResult), rooms...)
+
+	if err := s.handleEventTypeAfterNotify(body); err != nil {
+		return cerrors.Wrap(err, "handleEventTypeAfterNotify failure")
+	}
+	return nil
+}
+
+// всве клиенты получат только ивент
+func (s *Subix) NotifyAllRoomMembers(body model.EventResult, rooms ...ID) error {
+
+	s.writeToRoom(true, body.(model.EventResult), rooms...)
 
 	if err := s.handleEventTypeAfterNotify(body); err != nil {
 		return cerrors.Wrap(err, "handleEventTypeAfterNotify failure")
@@ -36,15 +47,16 @@ func (s *Subix) handleEventTypeAfterNotify(body interface{}) error {
 
 	switch body.(type) {
 
-	case *model.DeleteRoom: // чтобы участники перестали получать события
-		for _, id := range body.(*model.DeleteRoom).RoomsID {
-			s.DeleteRoom(id)
+	case *model.DropRoom: // чтобы участники перестали получать события
+		s.DeleteRoom(body.(*model.DropRoom).RoomID)
+
+	case *model.MemberAction:
+		if body.(*model.MemberAction).Action == model.ActionDel {
+			for _, roomID := range body.(*model.MemberAction).RoomIDs {
+				delete(s.rooms[roomID].Empls, body.(*model.MemberAction).EmpID)
+			}
 		}
 
-	case *model.RemoveMember:
-		for _, roomID := range body.(*model.RemoveMember).RoomIDs {
-			delete(s.rooms[roomID].Empls, body.(*model.RemoveMember).EmpID)
-		}
 	}
 
 	return nil

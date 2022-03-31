@@ -3,7 +3,7 @@ package cdl
 import (
 	"fmt"
 	"github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/messenger-for-employee/graph/model"
 )
 
 func (r *RoomsResult) isRequestResult() {}
@@ -43,8 +43,8 @@ func (c *parentCategory) rooms() {
 		empIDs []int
 	)
 	for _, query := range inp {
-		empIDs = append(empIDs, query.Inp.(*RoomsInp).EmployeeID)
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
+		empIDs = append(empIDs, query.Inp.(*RoomsInp).EmployeeID)
 	}
 
 	rows, err := c.Dataloader.db.Query(`

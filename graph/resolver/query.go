@@ -4,7 +4,7 @@ package resolver
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	"github.com/saime-0/http-cute-chat/graph/generated"
+	"github.com/saime-0/messenger-for-employee/graph/generated"
 )
 
 // Query returns generated.QueryResolver implementation.

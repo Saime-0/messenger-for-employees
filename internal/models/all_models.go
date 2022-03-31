@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/saime-0/http-cute-chat/pkg/scheduler"
+	"github.com/saime-0/messenger-for-employee/pkg/scheduler"
 )
 
 type CreateMessage struct {

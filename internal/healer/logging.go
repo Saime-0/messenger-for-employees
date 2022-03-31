@@ -3,7 +3,7 @@ package healer
 import (
 	"context"
 	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/clog"
+	"github.com/saime-0/messenger-for-employee/internal/clog"
 	"time"
 )
 

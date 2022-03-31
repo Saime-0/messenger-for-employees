@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"context"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/healer"
-	"github.com/saime-0/http-cute-chat/internal/piper"
-	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
+	"github.com/saime-0/messenger-for-employee/internal/piper"
+	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"net"
 	"net/http"
 	"strings"
@@ -78,7 +78,7 @@ func InitNode(pip *piper.Pipeline, hlr *healer.Healer) func(http.Handler) http.H
 			)
 
 			request.Status = wrapped.status
-			request.Method = r.Method
+			//request.Method = r.Method
 			request.Path = r.URL.EscapedPath()
 			request.Duration = time.Since(start).String()
 		})

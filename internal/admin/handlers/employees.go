@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/saime-0/http-cute-chat/internal/admin/request_models"
-	"github.com/saime-0/http-cute-chat/internal/admin/responder"
-	"github.com/saime-0/http-cute-chat/internal/utils"
+	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
+	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
 	"log"
 	"net/http"
 )

@@ -7,14 +7,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/models"
+	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/resp"
+	"github.com/saime-0/messenger-for-employee/internal/rules"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

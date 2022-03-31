@@ -1,7 +1,7 @@
 package validator
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/messenger-for-employee/internal/rules"
 	"regexp"
 	"strings"
 )

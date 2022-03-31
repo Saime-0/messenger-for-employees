@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/saime-0/http-cute-chat/graph/resolver"
-	"github.com/saime-0/http-cute-chat/internal/admin/responder"
+	"github.com/saime-0/messenger-for-employee/graph/resolver"
+	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
 	"log"
 	"net/http"
 	"time"
@@ -23,6 +23,7 @@ func (h AdminHandler) initAPI(r *mux.Router) {
 	adm := r.PathPrefix("/admin").Subrouter()
 	h.initEmployeesRoutes(adm)
 	h.initRoomsRoutes(adm)
+	h.initTagsRoutes(adm)
 }
 
 func logRequest(next http.Handler) http.Handler {

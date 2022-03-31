@@ -1,4 +1,4 @@
-module github.com/saime-0/http-cute-chat
+module github.com/saime-0/messenger-for-employee
 
 go 1.17
 

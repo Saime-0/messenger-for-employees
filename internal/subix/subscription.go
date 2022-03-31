@@ -1,8 +1,8 @@
 package subix
 
 import (
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 )
 
 func (s *Subix) Sub(userID int, sessionKey Key, expAt int64) (*Client, error) {
@@ -41,7 +41,10 @@ func (s *Subix) ModifyCollection(employeeID int, sessionKey Key, roomIDs []ID, a
 	if !ok { // если ключа не существует, то клиент должен подписаться
 		return cerrors.New("no session with this key was found")
 	}
-	emp := s.employees[client.EmployeeID]
+	emp, ok := s.employees[client.EmployeeID]
+	if !ok { // сотрудник создается во время подписки, либо он случайно удалился, либо
+		return cerrors.New("client is not associated with any employee")
+	}
 	for _, event := range listenEvents {
 		if event == model.EventTypeAll {
 			listenEvents = allUsefulEventTypes
@@ -50,8 +53,8 @@ func (s *Subix) ModifyCollection(employeeID int, sessionKey Key, roomIDs []ID, a
 	}
 	if action == model.EventSubjectActionAdd { // если мемберс добавляет пачку событий
 		for _, roomID := range roomIDs {
-			room := s.CreateRoomIfNotExists(roomID)                    // достаем мембера из активных(те на которые подписаны клиенты) нужного мембера
-			clientWithEvents, ok := room.clientsWithEvents[sessionKey] // ищем сессию нужного клиента в мемберсе
+			room := s.CreateRoomIfNotExists(roomID)                    // достаем комнату из активных(те на которые подписаны клиенты) нужную комнату
+			clientWithEvents, ok := room.clientsWithEvents[sessionKey] // ищем сессию нужного клиента в комнате
 			if !ok {                                                   // если клиент еще не прослушивает этого участника, то заставляем слушать
 				clientWithEvents = &ClientWithEvents{
 					Client: client,
@@ -63,8 +66,10 @@ func (s *Subix) ModifyCollection(employeeID int, sessionKey Key, roomIDs []ID, a
 				clientWithEvents.Events[event] = true // добавил тип ивента который теперь будет отправляться клиенту(прослушиваться им)
 			}
 
-			// add room to emp memberings
-			emp.rooms[roomID] = room // даже если у пользователя уже есть мембер с таким id то все равно добавляем(не даст никакого эффекта)
+			// add room to emp rooms
+			emp.rooms[roomID] = room // даже если у пользователя уже есть комната с таким id то все равно добавляем(не даст никакого эффекта)
+			// and emp to room emps
+			room.Empls[emp.EmpID] = emp
 		}
 
 	} else if action == model.EventSubjectActionDelete {

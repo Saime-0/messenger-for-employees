@@ -1,8 +1,8 @@
 package email
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/validator"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/validator"
 	"net/smtp"
 	"strconv"
 )

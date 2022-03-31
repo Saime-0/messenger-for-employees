@@ -36,7 +36,7 @@ resolver:
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "github.com/saime-0/http-cute-chat/graph/model"
+  - "github.com/saime-0/messenger-for-employee/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -59,4 +59,4 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
   HexColor:
     model:
-      - github.com/saime-0/http-cute-chat/graph/model.HexColor
+      - github.com/saime-0/messenger-for-employee/graph/model.HexColor

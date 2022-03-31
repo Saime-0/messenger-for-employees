@@ -1,12 +1,12 @@
 package resolver
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cdl"
-	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/healer"
-	"github.com/saime-0/http-cute-chat/internal/piper"
-	"github.com/saime-0/http-cute-chat/internal/service"
-	"github.com/saime-0/http-cute-chat/internal/subix"
+	"github.com/saime-0/messenger-for-employee/internal/cdl"
+	"github.com/saime-0/messenger-for-employee/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
+	"github.com/saime-0/messenger-for-employee/internal/piper"
+	"github.com/saime-0/messenger-for-employee/internal/service"
+	"github.com/saime-0/messenger-for-employee/internal/subix"
 )
 
 // This file will not be regenerated automatically.

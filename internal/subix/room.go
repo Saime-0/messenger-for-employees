@@ -32,13 +32,12 @@ func (s *Subix) CreateRoomIfNotExists(roomID int) *Room {
 func (s *Subix) DeleteRoom(roomID int) {
 	room, ok := s.rooms[roomID]
 	if ok { // если вдруг не удается найти, то просто пропускаем
-		delete(s.rooms, roomID)      // удаление из глобальной мапы
-		room.clientsWithEvents = nil // на всякий случай заnullяем мапу
-
-		emp, ok := s.employees[room.RoomID]
-		if ok {
-			delete(emp.rooms, room.RoomID)
+		delete(s.rooms, roomID) // удаление из глобальной мапы
+		for _, emp := range room.Empls {
+			delete(emp.rooms, roomID)
+			//delete(s.employees[emp.Client.EmployeeID].rooms, roomID)
 		}
+		room.clientsWithEvents = nil // на всякий случай заnullяем мапу
 	}
 }
 

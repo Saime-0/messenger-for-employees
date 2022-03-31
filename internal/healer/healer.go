@@ -1,13 +1,13 @@
 package healer
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cache"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/clog"
-	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/pkg/fsm"
-	"github.com/saime-0/http-cute-chat/pkg/scheduler"
+	"github.com/saime-0/messenger-for-employee/internal/cache"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/clog"
+	"github.com/saime-0/messenger-for-employee/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/pkg/fsm"
+	"github.com/saime-0/messenger-for-employee/pkg/scheduler"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

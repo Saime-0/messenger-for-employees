@@ -3,32 +3,32 @@ package cdl
 import (
 	"fmt"
 	"github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/messenger-for-employee/graph/model"
 )
 
-func (r *userResult) isRequestResult() {}
-func (r *userInp) isRequestInput()     {}
+func (r *employeeResult) isRequestResult() {}
+func (r *employeeInp) isRequestInput()     {}
 
 type (
-	userInp struct {
+	employeeInp struct {
 		EmployeeID int
 	}
-	userResult struct {
+	employeeResult struct {
 		Employee *model.Employee
 	}
 )
 
 func (d *Dataloader) Employee(employeeID int) (*model.Employee, error) {
 	res := <-d.categories.Employee.addBaseRequest(
-		&userInp{
+		&employeeInp{
 			EmployeeID: employeeID,
 		},
-		new(userResult),
+		new(employeeResult),
 	)
 	if res == nil {
 		return nil, d.categories.Employee.Error
 	}
-	return res.(*userResult).Employee, nil
+	return res.(*employeeResult).Employee, nil
 }
 
 func (c *parentCategory) user() {
@@ -40,7 +40,7 @@ func (c *parentCategory) user() {
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
-		employeeIDs = append(employeeIDs, query.Inp.(*userInp).EmployeeID)
+		employeeIDs = append(employeeIDs, query.Inp.(*employeeInp).EmployeeID)
 	}
 
 	rows, err := c.Dataloader.db.Query(`
@@ -77,7 +77,7 @@ func (c *parentCategory) user() {
 		}
 
 		request := c.getRequest(ptr)
-		request.Result.(*userResult).Employee = m
+		request.Result.(*employeeResult).Employee = m
 	}
 
 	c.Error = nil

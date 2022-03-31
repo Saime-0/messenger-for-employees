@@ -1,10 +1,11 @@
 package subix
 
 import (
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/pkg/scheduler"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/rules"
+	"github.com/saime-0/messenger-for-employee/pkg/scheduler"
+	"log"
 	"time"
 )
 
@@ -78,26 +79,31 @@ func (s *Subix) deleteClient(sessionKey Key) {
 				case client.Ch <- x:
 				default:
 				}
+				log.Printf("закрываю канал у клиента  (его кто то читал)") // debug
 				close(client.Ch)
+			} else {
+				log.Printf("канал клиента не надо закрывать (он уже закрыт)") // debug
 			}
 		default:
+			log.Printf("закрываю канал у клиента  (его никто не читал)") // debug
 			close(client.Ch)
 		}
 
-		emp, ok := s.employees[client.EmployeeID]
-		if ok {
-			delete(emp.clients, client.sessionKey)
-			if len(emp.clients) == 0 {
-				s.deleteEmployee(emp.EmpID)
-			}
-		}
+		emp := s.employees[client.EmployeeID]
 
-		for _, room := range emp.rooms {
+		for _, room := range emp.rooms { // для начала надо "выписать" клиента из всех комнат
 			delete(room.clientsWithEvents, client.sessionKey)
+			//if emp.
 			if len(room.clientsWithEvents) == 0 {
 				s.DeleteRoom(room.RoomID)
 			}
 		}
+
+		delete(emp.clients, client.sessionKey) // а теперь удалить
+		if len(emp.clients) == 0 {
+			s.deleteEmployee(emp.EmpID)
+		}
+
 	}
 }
 
@@ -160,6 +166,7 @@ func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
 func (s Subix) ClientCollection(sessionKey Key) (collection []*model.ListenedChat) {
 	client, _ := s.clients[sessionKey]                          // предполагается что сессия с таким ключом существует
 	for _, room := range s.employees[client.EmployeeID].rooms { // по комнатам пользователя
+		log.Printf("room: %#v", room) // debug
 		listenedChat := &model.ListenedChat{ID: room.RoomID}
 		for event := range room.clientsWithEvents[sessionKey].Events {
 			listenedChat.Events = append(listenedChat.Events, event)

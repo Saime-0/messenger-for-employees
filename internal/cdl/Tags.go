@@ -3,7 +3,7 @@ package cdl
 import (
 	"fmt"
 	"github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/messenger-for-employee/graph/model"
 )
 
 func (r *TagsResult) isRequestResult() {}

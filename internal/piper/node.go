@@ -1,14 +1,14 @@
 package piper
 
 import (
-	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/cdl"
-	"github.com/saime-0/http-cute-chat/internal/clog"
-	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/healer"
-	"github.com/saime-0/http-cute-chat/internal/repository"
-	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/messenger-for-employee/graph/model"
+	"github.com/saime-0/messenger-for-employee/internal/cdl"
+	"github.com/saime-0/messenger-for-employee/internal/clog"
+	"github.com/saime-0/messenger-for-employee/internal/config"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
+	"github.com/saime-0/messenger-for-employee/internal/repository"
+	"github.com/saime-0/messenger-for-employee/internal/resp"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
@@ -47,6 +47,8 @@ type Node struct {
 	ScopeMethod   *Method
 
 	cfg *config.Config2
+
+	Request *Request
 }
 
 func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
@@ -71,6 +73,8 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 		scope: scope,
 
 		cfg: p.cfg,
+
+		Request: request,
 	}
 	p.Nodes[id] = n
 	return n, request
@@ -81,7 +85,9 @@ func (p *Pipeline) DeleteNode(id string) {
 }
 
 func (n *Node) Execute() {
-	n.Healer.Log(n.RootContainer)
+	if len(*n.Request.Body) != 0 {
+		n.Healer.Log(n.RootContainer)
+	}
 }
 
 func (n *Node) SwitchMethod(name string, vars *bson.M) {

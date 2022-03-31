@@ -1,6 +1,6 @@
 package request_models
 
-import "github.com/99designs/gqlgen/integration/models-go"
+import "github.com/saime-0/messenger-for-employee/graph/model"
 
 type CreateEmployee struct {
 	FirstName   string `json:"first_name"`
@@ -15,10 +15,14 @@ type CreateEmployeeResult struct {
 }
 
 type CreateRoom struct {
-	Name int           `json:"name"`
-	View models.Viewer `json:"view"`
+	Name string         `json:"name"`
+	View model.RoomType `json:"view"`
 }
 type CreateRoomResult struct {
+	RoomID int `json:"room_id"`
+}
+
+type DropRoom struct {
 	RoomID int `json:"room_id"`
 }
 
@@ -34,4 +38,31 @@ type AddOrDeleteEmployeesInRoom struct {
 type AddEmployeeToRooms struct {
 	Employee int   `json:"emp"`
 	Rooms    []int `json:"rooms"`
+}
+
+type CreateTag struct {
+	Name string `json:"name"`
+}
+
+type CreateTagResult struct {
+	TagID int `json:"tag_id"`
+}
+
+type UpdateTag struct {
+	TagID int    `json:"tag_id"`
+	Name  string `json:"name"`
+}
+
+type DropTag struct {
+	TagID int `json:"tag_id"`
+}
+
+type GiveTag struct {
+	EmpID  int   `json:"emp_id"`
+	TagIDs []int `json:"tag_id"`
+}
+
+type TakeTag struct {
+	EmpID int `json:"emp_id"`
+	TagID int `json:"tag_id"`
 }

@@ -1,6 +1,6 @@
 package resp
 
-import "github.com/saime-0/http-cute-chat/graph/model"
+import "github.com/saime-0/messenger-for-employee/graph/model"
 
 //type AdvancedError struct {
 //	Code    string `json:"code"`

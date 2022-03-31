@@ -1,9 +1,9 @@
 package healer
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/pkg/fsm"
+	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/rules"
+	"github.com/saime-0/messenger-for-employee/pkg/fsm"
 	"time"
 )
 

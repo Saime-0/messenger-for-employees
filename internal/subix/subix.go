@@ -1,8 +1,8 @@
 package subix
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/repository"
-	"github.com/saime-0/http-cute-chat/pkg/scheduler"
+	"github.com/saime-0/messenger-for-employee/internal/repository"
+	"github.com/saime-0/messenger-for-employee/pkg/scheduler"
 )
 
 type Subix struct {

@@ -1,7 +1,10 @@
 type SubscriptionBody {
 	event: EventType!
-#	action: EventSubjectAction
 	body: EventResult!
+}
+enum Action {
+	ADD
+	DEL
 }
 
 type NewMessage {
@@ -13,67 +16,15 @@ type NewMessage {
 	createdAt: Int64!
 }
 
-type UpdateEmpFirstName {
-	empID: ID!
-	val: String!
-}
+# Tags
+type DropTag { tagID: ID! }
+type EmpTagAction { action: Action!, empID: ID!, tagIDs: [ID!]! }
 
-type UpdateEmpLastName {
-	empID: ID!
-	val: String!
-}
+# Members
+type MemberAction { action: Action!, empID: ID!, RoomIDs: [ID!]! }
 
-type GiveTagToEmp {
-	empID: ID!
-	tagsID: [ID!]!
-}
-
-type TakeTagFromEmp {
-	empID: ID!
-	tagsID: [ID!]!
-}
-
-type RemoveTagFromEmp {
-	empID: ID!
-	tagID: ID!
-}
-
-type NewMember {
-	empID: ID!
-	roomIDs: [ID!]!
-}
-
-type RemoveMember {
-	empID: ID!
-	roomIDs: [ID!]!
-}
-
-type CreateTag {
-	tagID: ID!
-	name: String!
-#	color: HexColor!
-}
-
-type UpdateTag {
-	tagID: ID!
-	name: String!
-}
-
-type DeleteTag {
-	tagID: [ID!]!
-}
-
-type UpdateRoomName {
-	roomID: ID!
-	name: String!
-}
+# Rooms
+type DropRoom { roomID: ID! }
 
 
-type DeleteRoom {
-	roomsID: [ID!]!
-}
-
-
-type TokenExpired {
-	message: String!
-}
+type TokenExpired { message: String! }

@@ -2,7 +2,7 @@ package cdl
 
 import (
 	"database/sql"
-	"github.com/saime-0/http-cute-chat/internal/healer"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
 	"time"
 )
 

@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 	"log"
 	"time"
 )

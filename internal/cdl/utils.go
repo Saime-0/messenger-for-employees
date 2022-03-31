@@ -1,8 +1,8 @@
 package cdl
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/cerrors"
-	"github.com/saime-0/http-cute-chat/internal/utils"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
+	"github.com/saime-0/messenger-for-employee/internal/utils"
 )
 
 func (c *parentCategory) getRequest(ptr chanPtr) *baseRequest {
