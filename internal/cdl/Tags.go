@@ -59,7 +59,7 @@ func (c *parentCategory) tags() {
 		pq.Array(empIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("tags:" + err.Error())
+		//c.Dataloader.healer.Alert("tags:" + err.Desk())
 		c.Error = err
 		return
 	}
@@ -72,7 +72,7 @@ func (c *parentCategory) tags() {
 		m := new(model.Tag)
 
 		if err = rows.Scan(&ptr, &m.TagID, &m.Name); err != nil {
-			//c.Dataloader.healer.Alert("tags (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("tags (scan rows):" + err.Desk())
 			c.Error = err
 			return
 		}

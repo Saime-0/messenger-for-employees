@@ -56,7 +56,7 @@ func (c *parentCategory) messageExists() {
 		pq.Array(msgIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("messageExists:" + err.Error())
+		//c.Dataloader.healer.Alert("messageExists:" + err.Desk())
 		c.Error = err
 		return
 	}
@@ -69,7 +69,7 @@ func (c *parentCategory) messageExists() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &exists); err != nil {
-			//c.Dataloader.healer.Alert("messageExists (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("messageExists (scan rows):" + err.Desk())
 			c.Error = err
 			return
 		}

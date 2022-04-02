@@ -309,35 +309,35 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EmpTagAction.TagIDs(childComplexity), true
 
-	case "Employee.empID":
+	case "EmpID.empID":
 		if e.complexity.Employee.EmpID == nil {
 			break
 		}
 
 		return e.complexity.Employee.EmpID(childComplexity), true
 
-	case "Employee.firstName":
+	case "EmpID.firstName":
 		if e.complexity.Employee.FirstName == nil {
 			break
 		}
 
 		return e.complexity.Employee.FirstName(childComplexity), true
 
-	case "Employee.joinedAt":
+	case "EmpID.joinedAt":
 		if e.complexity.Employee.JoinedAt == nil {
 			break
 		}
 
 		return e.complexity.Employee.JoinedAt(childComplexity), true
 
-	case "Employee.lastName":
+	case "EmpID.lastName":
 		if e.complexity.Employee.LastName == nil {
 			break
 		}
 
 		return e.complexity.Employee.LastName(childComplexity), true
 
-	case "Employee.tags":
+	case "EmpID.tags":
 		if e.complexity.Employee.Tags == nil {
 			break
 		}
@@ -915,7 +915,7 @@ type TokenPair {
     refreshToken: String!
 }
 
-type Employee {
+type EmpID {
     empID: ID!
     firstName: String!
     lastName: String!
@@ -924,7 +924,7 @@ type Employee {
     tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
-    employees: [Employee!]
+    employees: [EmpID!]
 }
 
 type PersonalData {
@@ -947,7 +947,7 @@ type Rooms {
 }
 
 type Member {
-    employee: Employee! @goField(forceResolver: true)
+    employee: EmpID! @goField(forceResolver: true)
     room: Room! @goField(forceResolver: true)
 }
 type Members {
@@ -965,7 +965,7 @@ type Tags {
 type Message {
     room: Room! @goField(forceResolver: true)
     msgID: ID!
-    employee: Employee! @goField(forceResolver: true)
+    employee: EmpID! @goField(forceResolver: true)
     targetMsgID: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
@@ -975,7 +975,7 @@ type Messages {
 }
 
 type Me {
-    employee: Employee!
+    employee: EmpID!
     personal: PersonalData!
     rooms: Rooms! @goField(forceResolver: true)
 }
@@ -1772,7 +1772,7 @@ func (ec *executionContext) _Employee_empID(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Employee",
+		Object:     "EmpID",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1807,7 +1807,7 @@ func (ec *executionContext) _Employee_firstName(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Employee",
+		Object:     "EmpID",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1842,7 +1842,7 @@ func (ec *executionContext) _Employee_lastName(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Employee",
+		Object:     "EmpID",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1877,7 +1877,7 @@ func (ec *executionContext) _Employee_joinedAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Employee",
+		Object:     "EmpID",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1912,7 +1912,7 @@ func (ec *executionContext) _Employee_tags(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Employee",
+		Object:     "EmpID",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -6080,7 +6080,7 @@ func (ec *executionContext) _EmpTagAction(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var employeeImplementors = []string{"Employee"}
+var employeeImplementors = []string{"EmpID"}
 
 func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet, obj *model.Employee) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, employeeImplementors)
@@ -6089,7 +6089,7 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Employee")
+			out.Values[i] = graphql.MarshalString("EmpID")
 		case "empID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Employee_empID(ctx, field, obj)

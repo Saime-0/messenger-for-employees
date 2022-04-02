@@ -2,6 +2,7 @@ package responder
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -19,21 +20,31 @@ func Respond(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	if data != nil {
 		w.Header().Set("Content-Type", "application/json")
-
 		json.NewEncoder(w).Encode(data)
 	}
 }
 
-type ResponseError struct {
-	Error string `json:"error"`
+type RespError struct {
+	Message string `json:"message"`
 }
 
-func Error(w http.ResponseWriter, code int, err string) {
+func Error(w http.ResponseWriter, code int, msgError string) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(ResponseError{
-		Error: err,
-	})
+	if msgError != "" {
+		json.NewEncoder(w).Encode(RespError{
+			Message: msgError,
+		})
+	}
 
+}
+
+func End(err error, w http.ResponseWriter, code int, msgError string) (fail bool) {
+	if err != nil {
+		log.Printf("%#v", err) // debug
+		Error(w, code, msgError)
+		return true
+	}
+	return
 }

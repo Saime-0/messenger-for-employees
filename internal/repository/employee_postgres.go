@@ -176,3 +176,22 @@ func (r EmployeesRepo) CreateEmployee(emp *request_models.CreateEmployee) (empID
 	).Scan(&empID)
 	return
 }
+
+//func (r EmployeesRepo) EmployeeExistsByFullName(fullName string) (exists bool, err error) {
+//	fullName = strings.ToLower(fullName)
+//	err = r.db.QueryRow(`
+//		SELECT EXISTS(
+//		    SELECT 1
+//		    FROM employees
+//		    WHERE
+//		)
+//	`,
+//		emp.FirstName,
+//		emp.LastName,
+//		emp.Email,
+//		emp.PhoneNumber,
+//		emp.Token,
+//		emp.Comment,
+//	).Scan(&empID)
+//	return
+//}

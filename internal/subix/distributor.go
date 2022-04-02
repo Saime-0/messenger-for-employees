@@ -21,7 +21,7 @@ func (s *Subix) NotifyRoomMembers(body model.EventResult, rooms ...ID) error {
 	return nil
 }
 
-// всве клиенты получат только ивент
+// все учсастники(клиенты) получат ивент
 func (s *Subix) NotifyAllRoomMembers(body model.EventResult, rooms ...ID) error {
 
 	s.writeToRoom(true, body.(model.EventResult), rooms...)
@@ -32,10 +32,21 @@ func (s *Subix) NotifyAllRoomMembers(body model.EventResult, rooms ...ID) error 
 	return nil
 }
 
-// NotifyEmployees можно отправлять любой ивент, он все равно будет отправлен клиенту
+// можно отправлять любой ивент, он все равно будет отправлен клиенту
 func (s *Subix) NotifyEmployees(body model.EventResult, empIDs ...ID) error {
 
 	s.writeToEmployees(body.(model.EventResult), empIDs...)
+
+	if err := s.handleEventTypeAfterNotify(body); err != nil {
+		return cerrors.Wrap(err, "handleEventTypeAfterNotify failure")
+	}
+	return nil
+}
+
+// отправить всем клиентам
+func (s *Subix) NotifyAllEmployees(body model.EventResult) error {
+
+	s.writeToAllEmployees(body.(model.EventResult))
 
 	if err := s.handleEventTypeAfterNotify(body); err != nil {
 		return cerrors.Wrap(err, "handleEventTypeAfterNotify failure")

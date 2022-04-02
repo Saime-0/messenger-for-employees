@@ -57,7 +57,7 @@ func (c *parentCategory) employeeIsRoomMember() {
 		pq.Array(roomIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("employeeIsRoomMember:" + err.Error())
+		//c.Dataloader.healer.Alert("employeeIsRoomMember:" + err.Desk())
 		c.Error = err
 		return
 	}
@@ -70,7 +70,7 @@ func (c *parentCategory) employeeIsRoomMember() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &isMember); err != nil {
-			//c.Dataloader.healer.Alert("employeeIsRoomMember (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("employeeIsRoomMember (scan rows):" + err.Desk())
 			c.Error = err
 			return
 		}

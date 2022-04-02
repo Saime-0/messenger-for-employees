@@ -27,6 +27,19 @@ func (r *TagsRepo) CreateTag(tag *request_models.CreateTag) (tagID int, err erro
 	return
 }
 
+func (r *TagsRepo) TagExistsByName(name string) (exists bool, err error) {
+	err = r.db.QueryRow(`
+		SELECT EXISTS(
+		    SELECT 1
+		    FROm tags
+		    WHERE name = $1
+		)
+	`,
+		name,
+	).Err()
+	return
+}
+
 func (r *TagsRepo) UpdateTag(tag *request_models.UpdateTag) (err error) {
 	err = r.db.QueryRow(`
 		UPDATE tags 
@@ -45,7 +58,20 @@ func (r *TagsRepo) DropTag(tag *request_models.DropTag) (err error) {
 		WHERE tag_id = $1
 	`,
 		tag.TagID,
-	).Scan()
+	).Err()
+	return
+}
+
+func (r *TagsRepo) TagExists(tagID int) (exists bool, err error) {
+	err = r.db.QueryRow(`
+		SELECT EXISTS(
+		    SELECT 1
+		    FROm tags
+		    WHERE tag_id = $1
+		)
+	`,
+		tagID,
+	).Err()
 	return
 }
 

@@ -17,7 +17,7 @@ func (r *employeeResolver) Tags(ctx context.Context, obj *model.Employee) (*mode
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Employee.Tags", &bson.M{
+	node.SwitchMethod("EmpID.Tags", &bson.M{
 		"employeeID (obj.EmpID)": obj.EmpID,
 	})
 	defer node.MethodTiming()
@@ -41,7 +41,7 @@ func (r *meResolver) Rooms(ctx context.Context, obj *model.Me) (*model.Rooms, er
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Me.EmployeeRooms", &bson.M{
-		"employeeID (obj.Employee.EmpID)": obj.Employee.EmpID,
+		"employeeID (obj.EmpID.EmpID)": obj.Employee.EmpID,
 	})
 	defer node.MethodTiming()
 
@@ -58,8 +58,8 @@ func (r *memberResolver) Employee(ctx context.Context, obj *model.Member) (*mode
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Message.Employee", &bson.M{
-		"employeeID (obj.Employee.EmpID)": obj.Employee.EmpID,
+	node.SwitchMethod("Message.EmpID", &bson.M{
+		"employeeID (obj.EmpID.EmpID)": obj.Employee.EmpID,
 	})
 	defer node.MethodTiming()
 
@@ -116,8 +116,8 @@ func (r *messageResolver) Employee(ctx context.Context, obj *model.Message) (*mo
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Message.Employee", &bson.M{
-		"employeeID (obj.Employee.EmpID)": obj.Employee.EmpID,
+	node.SwitchMethod("Message.EmpID", &bson.M{
+		"employeeID (obj.EmpID.EmpID)": obj.Employee.EmpID,
 	})
 	defer node.MethodTiming()
 

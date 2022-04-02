@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/saime-0/messenger-for-employee/graph/model"
 	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
 	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
 	"github.com/saime-0/messenger-for-employee/internal/res"
@@ -12,28 +13,33 @@ import (
 
 func (h *AdminHandler) initTagsRoutes(r *mux.Router) {
 	emp := r.PathPrefix("/tags").Subrouter()
-	{
-		emp.HandleFunc("/create", h.CreateTag).Methods(http.MethodPost)
-		emp.HandleFunc("/drop", h.DropTag).Methods(http.MethodPost)
-		emp.HandleFunc("/update", h.UpdateTag).Methods(http.MethodPost)
-		emp.HandleFunc("/give", h.GiveTag).Methods(http.MethodPost)
-		emp.HandleFunc("/take", h.TakeTag).Methods(http.MethodPost)
+	{ // todo
+		emp.HandleFunc("/create", h.CreateTag).Methods(http.MethodPost) // /tags/create
+		emp.HandleFunc("/drop", h.DropTag).Methods(http.MethodPost)     // /tags/{tag-id}/drop
+		emp.HandleFunc("/update", h.UpdateTag).Methods(http.MethodPost) // /tags/{tag-id}/update
+		emp.HandleFunc("/give", h.GiveTag).Methods(http.MethodPost)     // /tags/{tag-id}/give/{emp-id}
+		emp.HandleFunc("/take", h.TakeTag).Methods(http.MethodPost)     // /tags/{tag-id}/take/{emp-id}
 	}
 }
 
 func (h *AdminHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
 	inp := &request_models.CreateTag{}
 	err := json.NewDecoder(r.Body).Decode(&inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusBadRequest, "bad")
+	if responder.End(err, w, http.StatusBadRequest, "bad") {
+		return
+	}
+
+	exists, err := h.Resolver.Services.Repos.Tags.TagExistsByName(inp.Name)
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
+		return
+	}
+	if !exists {
+		responder.Error(w, http.StatusBadRequest, "tag is not exists")
 		return
 	}
 
 	id, err := h.Resolver.Services.Repos.Tags.CreateTag(inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusInternalServerError, "bad")
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
 
@@ -49,6 +55,12 @@ func (h *AdminHandler) DropTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	exists, err := h.Resolver.Services.Repos.Tags.TagExists(inp.TagID)
+	if !exists {
+		responder.Error(w, http.StatusBadRequest, "tag is not exists")
+		return
+	}
+
 	err = h.Resolver.Services.Repos.Tags.DropTag(inp)
 	if err != nil {
 		log.Println(err) // debug
@@ -56,13 +68,11 @@ func (h *AdminHandler) DropTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// todo NotifyAllEmployees
-	//h.Resolver.Subix.NotifyEmployees(
-	//	&model.DropRoom{
-	//		RoomID: inp.RoomID,
-	//	},
-	//	employees...,
-	//)
+	h.Resolver.Subix.NotifyAllEmployees(
+		&model.DropTag{
+			TagID: inp.TagID,
+		},
+	)
 
 	responder.Respond(w, http.StatusOK, res.Success)
 }
@@ -70,16 +80,21 @@ func (h *AdminHandler) DropTag(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	inp := &request_models.UpdateTag{}
 	err := json.NewDecoder(r.Body).Decode(&inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusBadRequest, "bad")
+	if responder.End(err, w, http.StatusBadRequest, "bad") {
+		return
+	}
+
+	exists, err := h.Resolver.Services.Repos.Tags.TagExists(inp.TagID)
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
+		return
+	}
+	if !exists {
+		responder.Error(w, http.StatusBadRequest, "tag is not exists")
 		return
 	}
 
 	err = h.Resolver.Services.Repos.Tags.UpdateTag(inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusInternalServerError, "bad")
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
 
@@ -89,17 +104,34 @@ func (h *AdminHandler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) GiveTag(w http.ResponseWriter, r *http.Request) {
 	inp := &request_models.GiveTag{}
 	err := json.NewDecoder(r.Body).Decode(&inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusBadRequest, "bad")
+	if responder.End(err, w, http.StatusBadRequest, "bad") {
 		return
 	}
 	log.Printf("%#v", inp) // debug
 
+	emps, err := h.Resolver.Services.Repos.Employees.FindEmployees(&model.FindEmployees{
+		EmpID: &inp.EmpID,
+	})
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
+		return
+	}
+	if len(emps.Employees) == 0 {
+		responder.Error(w, http.StatusBadRequest, "an employee with this name already exists")
+		return
+	}
+
+	for _, tag := range inp.TagIDs {
+		exists, err := h.Resolver.Services.Repos.Tags.TagExists(tag)
+		if responder.End(err, w, http.StatusInternalServerError, "bad") {
+			return
+		}
+		if !exists {
+			responder.Error(w, http.StatusBadRequest, "tag is not exists")
+			return
+		}
+	}
 	err = h.Resolver.Services.Repos.Tags.GiveTag(inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusInternalServerError, "bad")
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
 
@@ -109,17 +141,13 @@ func (h *AdminHandler) GiveTag(w http.ResponseWriter, r *http.Request) {
 func (h *AdminHandler) TakeTag(w http.ResponseWriter, r *http.Request) {
 	inp := &request_models.TakeTag{}
 	err := json.NewDecoder(r.Body).Decode(&inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusBadRequest, "bad")
+	if responder.End(err, w, http.StatusBadRequest, "bad") {
 		return
 	}
 	log.Printf("%#v", inp) // debug
 
 	err = h.Resolver.Services.Repos.Tags.TakeTag(inp)
-	if err != nil {
-		log.Println(err) // debug
-		responder.Error(w, http.StatusInternalServerError, "bad")
+	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
 

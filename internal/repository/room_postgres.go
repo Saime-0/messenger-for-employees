@@ -219,6 +219,19 @@ func (r RoomsRepo) DropRoom(room *request_models.DropRoom) (err error) {
 	return
 }
 
+func (r RoomsRepo) RoomExists(roomID int) (exists bool, err error) {
+	err = r.db.QueryRow(`
+		SELECT EXISTS(
+		    SELECT 1
+		    FROm rooms
+		    WHERE room_id = $1
+		)
+	`,
+		roomID,
+	).Err()
+	return
+}
+
 func (r RoomsRepo) EmployeesIsNotMember(roomID int, empIDs ...int) (empIsMember int, err error) {
 	err = r.db.QueryRow(`
 		SELECT coalesce((
@@ -246,7 +259,7 @@ func (r RoomsRepo) AddEmployeeToRoom(inp *request_models.AddEmployeeToRooms) (er
 			FROM unnest($2::bigint[]) inp(roomid)
 			WHERE roomid != ALL(select room_id from "except")
 	`,
-		inp.Employee,
+		inp.EmpID,
 		pq.Array(inp.Rooms),
 	).Err()
 	return

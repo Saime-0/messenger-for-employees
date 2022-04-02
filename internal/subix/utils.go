@@ -46,6 +46,23 @@ func (s *Subix) writeToEmployees(body model.EventResult, empIDs ...int) {
 	}
 }
 
+func (s *Subix) writeToAllEmployees(body model.EventResult) {
+	eventType := getEventTypeByEventResult(body)
+	for _, emp := range s.employees {
+
+		for _, client := range emp.clients {
+			s.writeToClient(
+				client,
+				&model.SubscriptionBody{
+					Event: eventType,
+					Body:  body,
+				},
+			)
+		}
+
+	}
+}
+
 func (s *Subix) writeToClientsWithEvents(ignoreEventCollection bool, clientsWithEvents ClientsWithEvents, body model.EventResult, eventType model.EventType) {
 	for _, clientWithEvents := range clientsWithEvents {
 		if !ignoreEventCollection {

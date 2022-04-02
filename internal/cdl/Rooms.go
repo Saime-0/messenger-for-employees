@@ -63,7 +63,7 @@ func (c *parentCategory) rooms() {
 		pq.Array(empIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("rooms:" + err.Error())
+		//c.Dataloader.healer.Alert("rooms:" + err.Desk())
 		c.Error = err
 		return
 	}
@@ -76,7 +76,7 @@ func (c *parentCategory) rooms() {
 		m := new(model.Room)
 
 		if err = rows.Scan(&ptr, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
-			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Desk())
 			c.Error = err
 			return
 		}

@@ -36,8 +36,8 @@ type AddOrDeleteEmployeesInRoom struct {
 //}
 
 type AddEmployeeToRooms struct {
-	Employee int   `json:"emp"`
-	Rooms    []int `json:"rooms"`
+	EmpID int   `json:"emp_id"`
+	Rooms []int `json:"rooms"`
 }
 
 type CreateTag struct {

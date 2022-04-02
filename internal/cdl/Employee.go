@@ -56,7 +56,7 @@ func (c *parentCategory) user() {
 		pq.Array(employeeIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("user:" + err.Error())
+		//c.Dataloader.healer.Alert("user:" + err.Desk())
 		c.Error = err
 		return
 	}
@@ -68,7 +68,7 @@ func (c *parentCategory) user() {
 	for rows.Next() {
 		m := new(model.Employee)
 		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName, &m.JoinedAt); err != nil {
-			//c.Dataloader.healer.Alert("user (scan rows):" + err.Error())
+			//c.Dataloader.healer.Alert("user (scan rows):" + err.Desk())
 			c.Error = err
 			return
 		}
