@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"regexp"
-	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -30,28 +29,12 @@ func TrimFirstRune(s string) string {
 	return s[i:]
 }
 
-func CommaSeparate(arr *[]int) string {
-	str := ""
-	for _, v := range *arr {
-		str += "," + strconv.Itoa(v)
-	}
-	return TrimFirstRune(str)
-}
-
 func PrettyPrint(v interface{}) (err error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
 		fmt.Println(string(b))
 	}
 	return
-}
-
-func IntSQLArray(arr []int) string {
-	sqlArr := ""
-	for _, v := range arr {
-		sqlArr += fmt.Sprint(",", v)
-	}
-	return "(" + TrimFirstRune(sqlArr) + ")"
 }
 
 func RandomSecret(length int) string {
@@ -95,8 +78,6 @@ func After(offset int64) int64 {
 	return time.Now().Unix() + offset
 }
 
-func Err(v interface{}, err error) error {
-	return err
+func UnitWhitespaces(s string) string {
+	return strings.ReplaceAll(s, "  ", " ")
 }
-
-var IsLetter = regexp.MustCompile(`^[a-zA-Z0-9\-\=]{20}$`).MatchString

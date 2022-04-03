@@ -42,7 +42,7 @@ func (h *AdminHandler) CreateEmployee(w http.ResponseWriter, r *http.Request) {
 	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
-	if len(emps.Employees) == 0 {
+	if len(emps.Employees) != 0 {
 		responder.Error(w, http.StatusBadRequest, "an employee with this name already exists")
 		return
 	}

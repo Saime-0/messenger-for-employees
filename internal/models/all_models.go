@@ -44,3 +44,9 @@ type RoomsAndEmployees struct {
 	RoomIDs []int
 	EmpIDs  []int
 }
+
+type Admin struct {
+	ID    int    `json:"id"`
+	Email string `json:"email"`
+	Token string `json:"token"`
+}

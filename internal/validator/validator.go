@@ -8,7 +8,8 @@ import (
 
 var (
 	expEmail      = regexp.MustCompile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
-	expRoomName   = regexp.MustCompile(`^([a-z]{2,16}|[а-я]{2,16})+$`)
+	expRoomName   = regexp.MustCompile(`^.{1,32}$`)
+	expTagName    = regexp.MustCompile(`^.{1,32}$`)
 	expSessionKey = regexp.MustCompile(`^[a-zA-Z0-9\-=]{20}$`)
 	expPartOfName = regexp.MustCompile(`^([a-z]{2,16}|[а-я]{2,16})+$`)
 )
@@ -28,6 +29,10 @@ func ValidatePartOfName(part string) (valid bool) {
 
 func ValidateRoomName(name string) (valid bool) {
 	return expRoomName.MatchString(name)
+}
+
+func ValidateTagName(name string) (valid bool) {
+	return expTagName.MatchString(name)
 }
 
 func ValidatePassword(password string) (valid bool) { // todo

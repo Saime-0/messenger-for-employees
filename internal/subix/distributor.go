@@ -64,7 +64,10 @@ func (s *Subix) handleEventTypeAfterNotify(body interface{}) error {
 	case *model.MemberAction:
 		if body.(*model.MemberAction).Action == model.ActionDel {
 			for _, roomID := range body.(*model.MemberAction).RoomIDs {
-				delete(s.rooms[roomID].Empls, body.(*model.MemberAction).EmpID)
+				room, ok := s.rooms[roomID]
+				if ok {
+					delete(room.Empls, body.(*model.MemberAction).EmpID)
+				}
 			}
 		}
 

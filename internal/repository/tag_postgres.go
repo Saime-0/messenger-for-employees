@@ -36,7 +36,7 @@ func (r *TagsRepo) TagExistsByName(name string) (exists bool, err error) {
 		)
 	`,
 		name,
-	).Err()
+	).Scan(&exists)
 	return
 }
 
@@ -62,7 +62,7 @@ func (r *TagsRepo) DropTag(tag *request_models.DropTag) (err error) {
 	return
 }
 
-func (r *TagsRepo) TagExists(tagID int) (exists bool, err error) {
+func (r *TagsRepo) TagExistsByID(tagID int) (exists bool, err error) {
 	err = r.db.QueryRow(`
 		SELECT EXISTS(
 		    SELECT 1
@@ -71,7 +71,7 @@ func (r *TagsRepo) TagExists(tagID int) (exists bool, err error) {
 		)
 	`,
 		tagID,
-	).Err()
+	).Scan(&exists)
 	return
 }
 

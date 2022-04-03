@@ -1,6 +1,10 @@
 package res
 
-const Year int64 = 31536000
+// regular
+const (
+	Year       int64 = 31536000
+	AuthHeader       = "Authorization"
+)
 
 type FetchType string
 
@@ -26,6 +30,7 @@ const (
 	CtxAuthData
 	CtxUserAgent
 	CtxNode
+	CtxAdminData
 
 	// cache keys
 	CacheNextRunRegularScheduleAt

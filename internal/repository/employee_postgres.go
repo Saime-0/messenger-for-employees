@@ -70,21 +70,21 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		    LEFT JOIN positions p ON e.emp_id = p.emp_id 
 			LEFT JOIN members m ON m.emp_id = e.emp_id 
 		WHERE (
-		    $1 IS NULL OR
-		    e.emp_id = $1
+		    $1::BIGINT IS NULL OR
+		    e.emp_id = $1::BIGINT
 		) AND (
-			$2 IS NULL OR
-			m.room_id = $2
+			$2::BIGINT IS NULL OR
+			m.room_id = $2::BIGINT
 		)
 		AND (
-			$3 IS NULL OR
-			p.tag_id = $3
+			$3::BIGINT IS NULL OR
+			p.tag_id = $3::BIGINT
 		) AND (
-		    $4 = ' ' OR 
-		    e.first_name ILIKE $4 OR e.last_name ILIKE $4
+		    $4::VARCHAR = ' ' OR 
+		    e.first_name ILIKE $4::VARCHAR OR e.last_name ILIKE $4::VARCHAR
 		) AND (
-		    $5 = ' ' OR 
-		    e.first_name ILIKE $5 OR e.last_name ILIKE $5
+		    $5::VARCHAR = ' ' OR 
+		    e.first_name ILIKE $5::VARCHAR OR e.last_name ILIKE $5::VARCHAR
 		)
 		GROUP BY e.emp_id 
 		`,

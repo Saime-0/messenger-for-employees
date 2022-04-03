@@ -26,9 +26,9 @@ type DropRoom struct {
 	RoomID int `json:"room_id"`
 }
 
-type AddOrDeleteEmployeesInRoom struct {
+type KickEmployeesFromRooms struct {
+	Employees []int `json:"emps"`
 	Rooms     []int `json:"rooms"`
-	Employees []int `json:"employees"`
 }
 
 //type AddOrDeleteEmployeesInRoomResult struct {
@@ -59,7 +59,7 @@ type DropTag struct {
 
 type GiveTag struct {
 	EmpID  int   `json:"emp_id"`
-	TagIDs []int `json:"tag_id"`
+	TagIDs []int `json:"tags"`
 }
 
 type TakeTag struct {

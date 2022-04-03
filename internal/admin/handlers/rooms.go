@@ -8,6 +8,8 @@ import (
 	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
 	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
 	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/validator"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"log"
 	"net/http"
 )
@@ -28,7 +30,16 @@ func (h *AdminHandler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if responder.End(err, w, http.StatusBadRequest, "bad") {
 		return
 	}
+	inp.Name = kit.UnitWhitespaces(inp.Name)
 
+	if !inp.View.IsValid() {
+		responder.Error(w, http.StatusBadRequest, fmt.Sprintf("available views: %s", model.AllRoomType))
+		return
+	}
+	if !validator.ValidateRoomName(inp.Name) {
+		responder.Error(w, http.StatusBadRequest, "invalid room name")
+		return
+	}
 	id, err := h.Resolver.Services.Repos.Rooms.CreateRoom(inp)
 	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
@@ -87,7 +98,7 @@ func (h *AdminHandler) AddEmployee(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(emps.Employees) == 0 {
-		responder.Error(w, http.StatusBadRequest, "an employee with this name already exists")
+		responder.Error(w, http.StatusBadRequest, fmt.Sprintf("employee(id:%d) does not exist", inp.EmpID))
 		return
 	}
 	for _, room := range inp.Rooms {
@@ -126,9 +137,17 @@ func (h *AdminHandler) AddEmployee(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) KickEmployees(w http.ResponseWriter, r *http.Request) {
-	inp := &request_models.AddOrDeleteEmployeesInRoom{}
+	inp := &request_models.KickEmployeesFromRooms{}
 	err := json.NewDecoder(r.Body).Decode(&inp)
 	if responder.End(err, w, http.StatusBadRequest, "bad") {
+		return
+	}
+	if len(inp.Employees) == 0 {
+		responder.Error(w, http.StatusBadRequest, "\"emps\" must contain employee IDs")
+		return
+	}
+	if len(inp.Rooms) == 0 {
+		responder.Error(w, http.StatusBadRequest, "\"rooms\" must contain room IDs")
 		return
 	}
 	for _, empID := range inp.Employees {

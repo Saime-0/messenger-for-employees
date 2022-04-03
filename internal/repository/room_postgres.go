@@ -228,7 +228,7 @@ func (r RoomsRepo) RoomExists(roomID int) (exists bool, err error) {
 		)
 	`,
 		roomID,
-	).Err()
+	).Scan(&exists)
 	return
 }
 
@@ -265,7 +265,7 @@ func (r RoomsRepo) AddEmployeeToRoom(inp *request_models.AddEmployeeToRooms) (er
 	return
 }
 
-func (r RoomsRepo) KickEmployeesFromRoom(inp *request_models.AddOrDeleteEmployeesInRoom) (err error) {
+func (r RoomsRepo) KickEmployeesFromRoom(inp *request_models.KickEmployeesFromRooms) (err error) {
 	err = r.db.QueryRow(`
 		DELETE FROM members
 		WHERE room_id = ANY($1) AND emp_id = ANY($2)

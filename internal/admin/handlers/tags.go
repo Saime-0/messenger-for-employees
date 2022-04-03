@@ -7,6 +7,8 @@ import (
 	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
 	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
 	"github.com/saime-0/messenger-for-employee/internal/res"
+	"github.com/saime-0/messenger-for-employee/internal/validator"
+	"github.com/saime-0/messenger-for-employee/pkg/kit"
 	"log"
 	"net/http"
 )
@@ -28,13 +30,18 @@ func (h *AdminHandler) CreateTag(w http.ResponseWriter, r *http.Request) {
 	if responder.End(err, w, http.StatusBadRequest, "bad") {
 		return
 	}
+	inp.Name = kit.UnitWhitespaces(inp.Name)
+	if !validator.ValidateTagName(inp.Name) {
+		responder.Error(w, http.StatusBadRequest, "invalid tag name")
+		return
+	}
 
 	exists, err := h.Resolver.Services.Repos.Tags.TagExistsByName(inp.Name)
 	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
-	if !exists {
-		responder.Error(w, http.StatusBadRequest, "tag is not exists")
+	if exists {
+		responder.Error(w, http.StatusBadRequest, "tag with this name already exists")
 		return
 	}
 
@@ -55,7 +62,7 @@ func (h *AdminHandler) DropTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists, err := h.Resolver.Services.Repos.Tags.TagExists(inp.TagID)
+	exists, err := h.Resolver.Services.Repos.Tags.TagExistsByID(inp.TagID)
 	if !exists {
 		responder.Error(w, http.StatusBadRequest, "tag is not exists")
 		return
@@ -83,8 +90,12 @@ func (h *AdminHandler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	if responder.End(err, w, http.StatusBadRequest, "bad") {
 		return
 	}
-
-	exists, err := h.Resolver.Services.Repos.Tags.TagExists(inp.TagID)
+	inp.Name = kit.UnitWhitespaces(inp.Name)
+	if !validator.ValidateTagName(inp.Name) {
+		responder.Error(w, http.StatusBadRequest, "invalid tag name")
+		return
+	}
+	exists, err := h.Resolver.Services.Repos.Tags.TagExistsByID(inp.TagID)
 	if responder.End(err, w, http.StatusInternalServerError, "bad") {
 		return
 	}
@@ -108,7 +119,10 @@ func (h *AdminHandler) GiveTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("%#v", inp) // debug
-
+	if len(inp.TagIDs) == 0 {
+		responder.Error(w, http.StatusBadRequest, "\"tags\" must contain tag IDs")
+		return
+	}
 	emps, err := h.Resolver.Services.Repos.Employees.FindEmployees(&model.FindEmployees{
 		EmpID: &inp.EmpID,
 	})
@@ -121,7 +135,7 @@ func (h *AdminHandler) GiveTag(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, tag := range inp.TagIDs {
-		exists, err := h.Resolver.Services.Repos.Tags.TagExists(tag)
+		exists, err := h.Resolver.Services.Repos.Tags.TagExistsByID(tag)
 		if responder.End(err, w, http.StatusInternalServerError, "bad") {
 			return
 		}

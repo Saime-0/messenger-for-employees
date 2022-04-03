@@ -11,6 +11,7 @@ type Repositories struct {
 	Rooms     *RoomsRepo
 	Messages  *MessagesRepo
 	Prepares  *PreparesRepo
+	Admins    *AdminsRepo
 }
 
 func NewRepositories(db *sql.DB) *Repositories {
@@ -21,5 +22,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Rooms:     NewRoomsRepo(db),
 		Messages:  NewMessagesRepo(db),
 		Prepares:  NewPreparesRepo(db),
+		Admins:    NewAdminsRepo(db),
 	}
 }
