@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/saime-0/messenger-for-employee/graph/resolver"
 	"github.com/saime-0/messenger-for-employee/internal/admin/responder"
+	"github.com/saime-0/messenger-for-employee/internal/healer"
 	"github.com/saime-0/messenger-for-employee/internal/models"
 	"github.com/saime-0/messenger-for-employee/internal/repository"
 	"github.com/saime-0/messenger-for-employee/internal/res"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
 	"time"
@@ -26,6 +29,8 @@ func NewAdminHandler(r *mux.Router, resolver *resolver.Resolver) *AdminHandler {
 
 func (h AdminHandler) initAPI(r *mux.Router) {
 	adm := r.PathPrefix("/admin").Subrouter()
+	adm.Use(adminAuth(h.Resolver.Services.Repos))
+	adm.Use(logRequest(h.Resolver.Healer))
 	h.initEmployeesRoutes(adm)
 	h.initRoomsRoutes(adm)
 	h.initTagsRoutes(adm)
@@ -34,7 +39,6 @@ func (h AdminHandler) initAPI(r *mux.Router) {
 func adminAuth(repo *repository.Repositories) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("started %s %s", r.Method, r.RequestURI)
 			token := r.Header.Get(res.AuthHeader)
 			if len(token) == 0 {
 				responder.Error(w, http.StatusUnauthorized, "missing \"Authorization\" header")
@@ -44,7 +48,11 @@ func adminAuth(repo *repository.Repositories) func(http.Handler) http.Handler {
 			if responder.End(err, w, http.StatusInternalServerError, "bad") {
 				return
 			}
-			r.WithContext(context.WithValue(
+			if admin == nil {
+				responder.Error(w, http.StatusUnauthorized, "the token is not authenticated")
+				return
+			}
+			r = r.WithContext(context.WithValue(
 				r.Context(),
 				res.CtxAdminData,
 				admin,
@@ -61,22 +69,26 @@ func Who(r *http.Request) *models.Admin {
 	return r.Context().Value(res.CtxAdminData).(*models.Admin)
 }
 
-func logRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("started %s %s", r.Method, r.RequestURI)
+func logRequest(h *healer.Healer) func(http.Handler) http.Handler {
 
-		start := time.Now()
-		rw := &responder.Writer{
-			ResponseWriter: w,
-			Code:           http.StatusOK,
-		}
-		next.ServeHTTP(rw, r)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("started %s %s", r.Method, r.RequestURI)
 
-		log.Printf(
-			"completed with %d %s in %v\n",
-			rw.Code,
-			http.StatusText(rw.Code),
-			time.Since(start),
-		)
-	})
+			start := time.Now()
+			rw := &responder.Writer{
+				ResponseWriter: w,
+				Code:           http.StatusOK,
+			}
+			next.ServeHTTP(rw, r)
+			admin := Who(r)
+			h.Log(bson.M{
+				"id":       admin.ID,
+				"email":    admin.Email,
+				"request":  r.RequestURI,
+				"status":   fmt.Sprint(rw.Code, " ", http.StatusText(rw.Code)),
+				"duration": time.Since(start),
+			})
+		})
+	}
 }

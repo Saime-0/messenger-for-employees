@@ -16,17 +16,21 @@ func NewAdminsRepo(db *sql.DB) *AdminsRepo {
 }
 
 func (r *AdminsRepo) AdminByToken(token string) (admin *models.Admin, err error) {
+	admin = new(models.Admin)
 	err = r.db.QueryRow(`
-		SELECT admin_id, email, token
+		SELECT 
+		       coalesce(admin_id, 0), 
+		       coalesce(email, ''), 
+		       coalesce(token, '')
 		FROM admins
-		WHERE token = $1`,
+		WHERE token = $1::VARCHAR`,
 		token,
 	).Scan(
 		&admin.ID,
 		&admin.Email,
 		&admin.Token,
 	)
-	if err == sql.ErrNoRows {
+	if admin.ID == 0 || err == sql.ErrNoRows {
 		return nil, nil
 	}
 	return
