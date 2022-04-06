@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.TagsResult, error) {
+func (r *queryResolver) Tags(ctx context.Context, tagIDs []int, params *model.Params) (model.TagsResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -30,7 +30,7 @@ func (r *queryResolver) Tags(ctx context.Context, params *model.Params) (model.T
 		return node.GetError(), nil
 	}
 
-	tags, err := r.Services.Repos.Tags.Tags(params)
+	tags, err := r.Services.Repos.Tags.Tags(tagIDs, params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil

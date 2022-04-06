@@ -1,3 +1,3 @@
 extend type Query {
-    tags(params: Params): TagsResult! @goField(forceResolver: true) @isAuth
+    tags(tagIDs: [Int!], params: Params): TagsResult! @goField(forceResolver: true) @isAuth
 }

@@ -158,7 +158,7 @@ type ComplexityRoot struct {
 		Me        func(childComplexity int) int
 		Messages  func(childComplexity int, find model.FindMessages, params *model.Params) int
 		Rooms     func(childComplexity int, find model.FindRooms, params *model.Params) int
-		Tags      func(childComplexity int, params *model.Params) int
+		Tags      func(childComplexity int, tagIDs []int, params *model.Params) int
 	}
 
 	Room struct {
@@ -236,7 +236,7 @@ type QueryResolver interface {
 	Me(ctx context.Context) (model.MeResult, error)
 	Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error)
 	Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error)
-	Tags(ctx context.Context, params *model.Params) (model.TagsResult, error)
+	Tags(ctx context.Context, tagIDs []int, params *model.Params) (model.TagsResult, error)
 }
 type RoomResolver interface {
 	Members(ctx context.Context, obj *model.Room) (*model.Members, error)
@@ -309,35 +309,35 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EmpTagAction.TagIDs(childComplexity), true
 
-	case "EmpID.empID":
+	case "Employee.empID":
 		if e.complexity.Employee.EmpID == nil {
 			break
 		}
 
 		return e.complexity.Employee.EmpID(childComplexity), true
 
-	case "EmpID.firstName":
+	case "Employee.firstName":
 		if e.complexity.Employee.FirstName == nil {
 			break
 		}
 
 		return e.complexity.Employee.FirstName(childComplexity), true
 
-	case "EmpID.joinedAt":
+	case "Employee.joinedAt":
 		if e.complexity.Employee.JoinedAt == nil {
 			break
 		}
 
 		return e.complexity.Employee.JoinedAt(childComplexity), true
 
-	case "EmpID.lastName":
+	case "Employee.lastName":
 		if e.complexity.Employee.LastName == nil {
 			break
 		}
 
 		return e.complexity.Employee.LastName(childComplexity), true
 
-	case "EmpID.tags":
+	case "Employee.tags":
 		if e.complexity.Employee.Tags == nil {
 			break
 		}
@@ -662,7 +662,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["params"].(*model.Params)), true
+		return e.complexity.Query.Tags(childComplexity, args["tagIDs"].([]int), args["params"].(*model.Params)), true
 
 	case "Room.lastMessageID":
 		if e.complexity.Room.LastMessageID == nil {
@@ -915,7 +915,7 @@ type TokenPair {
     refreshToken: String!
 }
 
-type EmpID {
+type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
@@ -924,7 +924,7 @@ type EmpID {
     tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
-    employees: [EmpID!]
+    employees: [Employee!]
 }
 
 type PersonalData {
@@ -947,7 +947,7 @@ type Rooms {
 }
 
 type Member {
-    employee: EmpID! @goField(forceResolver: true)
+    employee: Employee! @goField(forceResolver: true)
     room: Room! @goField(forceResolver: true)
 }
 type Members {
@@ -965,7 +965,7 @@ type Tags {
 type Message {
     room: Room! @goField(forceResolver: true)
     msgID: ID!
-    employee: EmpID! @goField(forceResolver: true)
+    employee: Employee! @goField(forceResolver: true)
     targetMsgID: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
@@ -975,7 +975,7 @@ type Messages {
 }
 
 type Me {
-    employee: EmpID!
+    employee: Employee!
     personal: PersonalData!
     rooms: Rooms! @goField(forceResolver: true)
 }
@@ -1064,7 +1064,7 @@ input FindRooms {
     rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/query_tags.graphql", Input: `extend type Query {
-    tags(params: Params): TagsResult! @goField(forceResolver: true) @isAuth
+    tags(tagIDs: [Int!], params: Params): TagsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
 	{Name: "graph-models/schemas/response.graphql", Input: `type AdvancedError {
@@ -1425,15 +1425,24 @@ func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.Params
-	if tmp, ok := rawArgs["params"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("params"))
-		arg0, err = ec.unmarshalOParams2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐParams(ctx, tmp)
+	var arg0 []int
+	if tmp, ok := rawArgs["tagIDs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tagIDs"))
+		arg0, err = ec.unmarshalOInt2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["params"] = arg0
+	args["tagIDs"] = arg0
+	var arg1 *model.Params
+	if tmp, ok := rawArgs["params"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("params"))
+		arg1, err = ec.unmarshalOParams2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐParams(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["params"] = arg1
 	return args, nil
 }
 
@@ -1772,7 +1781,7 @@ func (ec *executionContext) _Employee_empID(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "EmpID",
+		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1807,7 +1816,7 @@ func (ec *executionContext) _Employee_firstName(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "EmpID",
+		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1842,7 +1851,7 @@ func (ec *executionContext) _Employee_lastName(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "EmpID",
+		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1877,7 +1886,7 @@ func (ec *executionContext) _Employee_joinedAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "EmpID",
+		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1912,7 +1921,7 @@ func (ec *executionContext) _Employee_tags(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "EmpID",
+		Object:     "Employee",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -3484,7 +3493,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Tags(rctx, args["params"].(*model.Params))
+			return ec.resolvers.Query().Tags(rctx, args["tagIDs"].([]int), args["params"].(*model.Params))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -6080,7 +6089,7 @@ func (ec *executionContext) _EmpTagAction(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var employeeImplementors = []string{"EmpID"}
+var employeeImplementors = []string{"Employee"}
 
 func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet, obj *model.Employee) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, employeeImplementors)
@@ -6089,7 +6098,7 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("EmpID")
+			out.Values[i] = graphql.MarshalString("Employee")
 		case "empID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Employee_empID(ctx, field, obj)
@@ -7978,6 +7987,21 @@ func (ec *executionContext) marshalNID2ᚕintᚄ(ctx context.Context, sel ast.Se
 	return ret
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8583,6 +8607,44 @@ func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.Selec
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

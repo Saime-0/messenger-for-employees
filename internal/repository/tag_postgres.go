@@ -104,18 +104,29 @@ func (r *TagsRepo) TakeTag(tag *request_models.TakeTag) (err error) {
 	return
 }
 
-func (r *TagsRepo) Tags(params *model.Params) (*model.Tags, error) {
-
-	tags := &model.Tags{
-		Tags: []*model.Tag{},
+func (r *TagsRepo) Tags(tagIDs []int, params *model.Params) (*model.Tags, error) {
+	var (
+		allRows bool
+		tags    = &model.Tags{
+			Tags: []*model.Tag{},
+		}
+	)
+	if len(tagIDs) == 0 {
+		allRows = true
 	}
-
 	var rows, err = r.db.Query(`
-		SELECT t.tag_id, t.name
-		FROM tags t
-		LIMIT $1
-		OFFSET $2
+		SELECT tag_id, name
+		FROM tags
+		WHERE (
+		    $1::BOOLEAN
+		    OR
+		    tag_id = ANY($2::BIGINT[])
+		)
+		LIMIT $3
+		OFFSET $4
 		`,
+		allRows,
+		pq.Array(tagIDs),
 		params.Limit,
 		params.Offset,
 	)
