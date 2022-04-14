@@ -18,7 +18,7 @@ create table employees
     joined_at bigint default unix_utc_now() not null,
     token varchar(64) not null,
     comment varchar(512),
-    room_seq bigint[] default ARRAY[null]::bigint[] not null,
+    room_seq bigint[] default ARRAY[NULL::bigint] not null,
     primary key (emp_id)
 );
 
@@ -185,7 +185,7 @@ as $$
 begin
     if tg_op = 'INSERT' then
         new.prev_id = (select e.room_seq[array_length(room_seq, 1)] from employees e where e.emp_id = new.emp_id);
-        update employees e set room_seq = e.room_seq || new.room_id::bigint where e.emp_id = 8;
+        update employees e set room_seq = e.room_seq || new.room_id::bigint where e.emp_id = new.emp_id;
         --         new.prev_id = employees(new.eid).room_seq[len];
 --         employees(new.eid).room_seq[len] = new.room_id;
         return new;
@@ -199,11 +199,11 @@ begin
     end if;
     end if;
     raise exception 'operation could not be detected';
-end;
+end
 $$;
 
 create trigger on_insert_or_delete_member
-    after insert or delete
+    before insert or delete
     on members
     for each row
 execute procedure add_or_delete_id_in_room_seq();
