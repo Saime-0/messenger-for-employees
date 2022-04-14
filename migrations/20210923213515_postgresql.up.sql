@@ -18,7 +18,7 @@ create table employees
     joined_at bigint default unix_utc_now() not null,
     token varchar(64) not null,
     comment varchar(512),
-    room_seq bigint[] default ARRAY[]::bigint[] not null,
+    room_seq bigint[] default ARRAY[null]::bigint[] not null,
     primary key (emp_id)
 );
 
