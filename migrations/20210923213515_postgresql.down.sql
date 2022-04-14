@@ -26,3 +26,6 @@ drop function create_or_delete_count_msg_row();
 
 drop function replace_msg_id();
 
+drop function add_or_delete_id_in_room_seq();
+
+drop function move_room_in_the_sequence(bigint, bigint, bigint);
