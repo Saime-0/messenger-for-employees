@@ -1,0 +1,30 @@
+type SubscriptionBody {
+	event: EventType!
+	body: EventResult!
+}
+enum Action {
+	ADD
+	DEL
+}
+
+type NewMessage {
+	msgID: ID!
+	roomID: ID!
+	targetMsgID: ID
+	empID: ID!
+	body: String!
+	createdAt: Int64!
+}
+
+# Tags
+type DropTag { tagID: ID! }
+type EmpTagAction { action: Action!, empID: ID!, tagIDs: [ID!]! }
+
+# Members
+type MemberAction { action: Action!, empID: ID!, RoomIDs: [ID!]! }
+
+# Rooms
+type DropRoom { roomID: ID! }
+
+
+type TokenExpired { message: String! }

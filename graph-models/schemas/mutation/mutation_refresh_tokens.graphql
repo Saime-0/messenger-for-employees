@@ -1,3 +1,0 @@
-extend type Mutation {
-    refreshTokens(sessionKey: String, refreshToken: String!): RefreshTokensResult! @goField(forceResolver: true)
-}

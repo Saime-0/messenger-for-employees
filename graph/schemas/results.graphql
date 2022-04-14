@@ -1,0 +1,61 @@
+union MeResult =
+    | AdvancedError
+    | Me
+
+union RoomsResult =
+    | AdvancedError
+    | Rooms
+
+union TagsResult =
+    | AdvancedError
+    | Tags
+
+union EmployeesResult =
+    | AdvancedError
+    | Employees
+
+union LoginResult =
+    | AdvancedError
+    | TokenPair
+
+union RefreshTokensResult =
+    | AdvancedError
+    | TokenPair
+
+union RegisterResult =
+    | AdvancedError
+    | Successful
+
+union SendMsgResult =
+    | AdvancedError
+    | Successful
+
+union MessagesResult =
+    | AdvancedError
+    | Messages
+
+union EditListenEventCollectionResult =
+    | AdvancedError
+    | ListenCollection
+
+union EventResult =
+    | NewMessage
+    | DropTag
+    | EmpTagAction
+    | MemberAction
+    | DropRoom
+
+    | TokenExpired
+
+
+enum EventType {
+    all
+
+    NewMessage
+    DropTag
+    EmpTagAction
+    MemberAction
+    DropRoom
+
+    TokenExpired
+}

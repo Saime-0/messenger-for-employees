@@ -871,7 +871,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph-models/schemas/_directives.graphql", Input: `directive @goField(
+	{Name: "graph/schemas/_directives.graphql", Input: `directive @goField(
     forceResolver: Boolean
     name: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
@@ -885,9 +885,9 @@ directive @inputUnion on INPUT_FIELD_DEFINITION
 directive @inputLeastOne on INPUT_FIELD_DEFINITION
     | ARGUMENT_DEFINITION | INPUT_OBJECT
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/_scalars.graphql", Input: `scalar Int64
+	{Name: "graph/schemas/_scalars.graphql", Input: `scalar Int64
 scalar HexColor`, BuiltIn: false},
-	{Name: "graph-models/schemas/general_models.graphql", Input: `enum FetchType {
+	{Name: "graph/schemas/general_models.graphql", Input: `enum FetchType {
     POSITIVE
     NEUTRAL
     NEGATIVE
@@ -990,7 +990,7 @@ type ListenedChat {
     id: ID!
     events: [EventType!]!
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/inputs.graphql", Input: `input LoginInput {
+	{Name: "graph/schemas/inputs.graphql", Input: `input LoginInput {
     email: String!
     password: String!
 }
@@ -1038,36 +1038,36 @@ input FindRooms {
 
 
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/mutation/mutation_login.graphql", Input: `extend type Mutation {
+	{Name: "graph/schemas/mutation/mutation_login.graphql", Input: `extend type Mutation {
     login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/mutation/mutation_refresh_tokens.graphql", Input: `extend type Mutation {
+	{Name: "graph/schemas/mutation/mutation_refresh_tokens.graphql", Input: `extend type Mutation {
     refreshTokens(sessionKey: String, refreshToken: String!): RefreshTokensResult! @goField(forceResolver: true)
 }
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/mutation/mutation_send_msg.graphql", Input: `extend type Mutation {
+	{Name: "graph/schemas/mutation/mutation_send_msg.graphql", Input: `extend type Mutation {
     sendMsg(input: CreateMessageInput!): SendMsgResult! @goField(forceResolver: true) @isAuth
 }
 
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/mutation.graphql", Input: `type Mutation`, BuiltIn: false},
-	{Name: "graph-models/schemas/query/query_employees.graphql", Input: `extend type Query {
+	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation`, BuiltIn: false},
+	{Name: "graph/schemas/query/query_employees.graphql", Input: `extend type Query {
     employees(find: FindEmployees! @inputLeastOne, params: Params): EmployeesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/query/query_me.graphql", Input: `extend type Query {
+	{Name: "graph/schemas/query/query_me.graphql", Input: `extend type Query {
     me: MeResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/query/query_messages.graphql", Input: `extend type Query {
+	{Name: "graph/schemas/query/query_messages.graphql", Input: `extend type Query {
     messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/query/query_rooms.graphql", Input: `extend type Query {
+	{Name: "graph/schemas/query/query_rooms.graphql", Input: `extend type Query {
     rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/query/query_tags.graphql", Input: `extend type Query {
+	{Name: "graph/schemas/query/query_tags.graphql", Input: `extend type Query {
     tags(tagIDs: [Int!], params: Params): TagsResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
-	{Name: "graph-models/schemas/response.graphql", Input: `type AdvancedError {
+	{Name: "graph/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
+	{Name: "graph/schemas/response.graphql", Input: `type AdvancedError {
     code: String!
     error: String!
 }
@@ -1079,7 +1079,7 @@ type Successful {
 union MutationResult =
     | AdvancedError
     | Successful`, BuiltIn: false},
-	{Name: "graph-models/schemas/results.graphql", Input: `union MeResult =
+	{Name: "graph/schemas/results.graphql", Input: `union MeResult =
     | AdvancedError
     | Me
 
@@ -1140,7 +1140,7 @@ enum EventType {
 
     TokenExpired
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/mutation_edit_listen_event_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
+	{Name: "graph/schemas/subscription/mutation_edit_listen_event_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
 extend type Mutation {
 	editListenEventCollection(
 		sessionKey: String!,
@@ -1151,7 +1151,7 @@ extend type Mutation {
 }
 
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/subscription_models.graphql", Input: `type SubscriptionBody {
+	{Name: "graph/schemas/subscription/subscription_models.graphql", Input: `type SubscriptionBody {
 	event: EventType!
 	body: EventResult!
 }
@@ -1181,12 +1181,12 @@ type DropRoom { roomID: ID! }
 
 
 type TokenExpired { message: String! }`, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/subscription_subscribe.graphql", Input: `extend type Subscription {
+	{Name: "graph/schemas/subscription/subscription_subscribe.graphql", Input: `extend type Subscription {
 	subscribe(
 		sessionKey: String!,
 	): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription.graphql", Input: `type Subscription`, BuiltIn: false},
+	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 

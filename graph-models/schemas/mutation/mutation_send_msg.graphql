@@ -1,4 +1,0 @@
-extend type Mutation {
-    sendMsg(input: CreateMessageInput!): SendMsgResult! @goField(forceResolver: true) @isAuth
-}
-
