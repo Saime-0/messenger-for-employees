@@ -25,14 +25,18 @@ func (r *RoomsRepo) EmployeeRooms(employeeID int, params *model.Params) (*model.
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id
+		WITH seq AS (
+		    SELECT room_seq[
+		        (select 1+coalesce($2,0)):
+                (select 1+coalesce($2,0)) + (select coalesce($3, array_length(room_seq, 1)))] 
+		    FROM employees WHERE emp_id = $1
+		)
+		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.prev_id
 		FROM rooms r
 		JOIN members m 
 		    ON m.room_id = r.room_id AND m.emp_id = $1 
 		JOIN msg_state c 
 		    ON r.room_id = c.room_id
-		LIMIT $6
-		OFFSET $7
 	`,
 		employeeID,
 		params.Limit,
@@ -45,7 +49,7 @@ func (r *RoomsRepo) EmployeeRooms(employeeID int, params *model.Params) (*model.
 
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.PrevRoomID); err != nil {
 			return nil, err
 		}
 
@@ -64,7 +68,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id
+		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.prev_id
 		FROM rooms r
 		JOIN members m 
 		    ON m.room_id = r.room_id AND m.emp_id = $1 
@@ -94,7 +98,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.PrevRoomID); err != nil {
 			return nil, err
 		}
 
@@ -272,6 +276,30 @@ func (r RoomsRepo) KickEmployeesFromRoom(inp *request_models.KickEmployeesFromRo
 	`,
 		pq.Array(inp.Rooms),
 		pq.Array(inp.Employees),
+	).Err()
+	return
+}
+
+func (r RoomsRepo) MoveRoom(empID, roomID int, prevRoomID *int) (err error) {
+	err = r.db.QueryRow(`
+		SELECT move_room_in_the_sequence($1, $2, $3)
+	`,
+		empID,
+		roomID,
+		prevRoomID,
+	).Err()
+	return
+}
+
+func (r RoomsRepo) ReadMessage(empID, roomID, msgID int) (err error) {
+	err = r.db.QueryRow(`
+		UPDATE members
+		SET last_msg_read = $3
+		WHERE emp_id = $1 AND room_id = $2 AND last_msg_read < $3
+	`,
+		empID,
+		roomID,
+		msgID,
 	).Err()
 	return
 }

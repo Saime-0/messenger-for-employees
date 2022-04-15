@@ -30,6 +30,14 @@ union SendMsgResult =
     | AdvancedError
     | Successful
 
+union ReadMsgResult =
+    | AdvancedError
+    | Successful
+
+union MoveRoomResult =
+    | AdvancedError
+    | Successful
+
 union MessagesResult =
     | AdvancedError
     | Messages

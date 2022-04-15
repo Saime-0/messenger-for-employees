@@ -1,0 +1,4 @@
+extend type Mutation {
+    readMsg(roomID: ID!, msgID: ID!): ReadMsgResult! @goField(forceResolver: true) @isAuth
+}
+

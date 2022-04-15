@@ -49,6 +49,7 @@ type Room {
     name: String!
     view: RoomType!
     # for the client
+    prevRoomID: ID
     lastMessageRead: ID!
     lastMessageID: ID!
     members: Members! @goField(forceResolver: true)

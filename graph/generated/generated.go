@@ -134,6 +134,8 @@ type ComplexityRoot struct {
 	Mutation struct {
 		EditListenEventCollection func(childComplexity int, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) int
 		Login                     func(childComplexity int, input model.LoginInput) int
+		MoveRoom                  func(childComplexity int, roomID int, prevRoomID *int) int
+		ReadMsg                   func(childComplexity int, roomID int, msgID int) int
 		RefreshTokens             func(childComplexity int, sessionKey *string, refreshToken string) int
 		SendMsg                   func(childComplexity int, input model.CreateMessageInput) int
 	}
@@ -166,6 +168,7 @@ type ComplexityRoot struct {
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
 		Name            func(childComplexity int) int
+		PrevRoomID      func(childComplexity int) int
 		RoomID          func(childComplexity int) int
 		View            func(childComplexity int) int
 	}
@@ -227,6 +230,8 @@ type MessageResolver interface {
 }
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error)
+	MoveRoom(ctx context.Context, roomID int, prevRoomID *int) (model.MoveRoomResult, error)
+	ReadMsg(ctx context.Context, roomID int, msgID int) (model.ReadMsgResult, error)
 	RefreshTokens(ctx context.Context, sessionKey *string, refreshToken string) (model.RefreshTokensResult, error)
 	SendMsg(ctx context.Context, input model.CreateMessageInput) (model.SendMsgResult, error)
 	EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error)
@@ -522,6 +527,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
 
+	case "Mutation.moveRoom":
+		if e.complexity.Mutation.MoveRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_moveRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MoveRoom(childComplexity, args["roomID"].(int), args["prevRoomID"].(*int)), true
+
+	case "Mutation.readMsg":
+		if e.complexity.Mutation.ReadMsg == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_readMsg_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ReadMsg(childComplexity, args["roomID"].(int), args["msgID"].(int)), true
+
 	case "Mutation.refreshTokens":
 		if e.complexity.Mutation.RefreshTokens == nil {
 			break
@@ -691,6 +720,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Name(childComplexity), true
+
+	case "Room.prevRoomID":
+		if e.complexity.Room.PrevRoomID == nil {
+			break
+		}
+
+		return e.complexity.Room.PrevRoomID(childComplexity), true
 
 	case "Room.roomID":
 		if e.complexity.Room.RoomID == nil {
@@ -938,6 +974,7 @@ type Room {
     name: String!
     view: RoomType!
     # for the client
+    prevRoomID: ID
     lastMessageRead: ID!
     lastMessageID: ID!
     members: Members! @goField(forceResolver: true)
@@ -1041,6 +1078,16 @@ input FindRooms {
 	{Name: "graph/schemas/mutation/mutation_login.graphql", Input: `extend type Mutation {
     login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
 }`, BuiltIn: false},
+	{Name: "graph/schemas/mutation/mutation_move_room.graphql", Input: `extend type Mutation {
+    moveRoom(roomID: ID!, prevRoomID: ID): MoveRoomResult! @goField(forceResolver: true) @isAuth
+}
+
+`, BuiltIn: false},
+	{Name: "graph/schemas/mutation/mutation_read_msg.graphql", Input: `extend type Mutation {
+    readMsg(roomID: ID!, msgID: ID!): ReadMsgResult! @goField(forceResolver: true) @isAuth
+}
+
+`, BuiltIn: false},
 	{Name: "graph/schemas/mutation/mutation_refresh_tokens.graphql", Input: `extend type Mutation {
     refreshTokens(sessionKey: String, refreshToken: String!): RefreshTokensResult! @goField(forceResolver: true)
 }
@@ -1108,6 +1155,14 @@ union RegisterResult =
     | Successful
 
 union SendMsgResult =
+    | AdvancedError
+    | Successful
+
+union ReadMsgResult =
+    | AdvancedError
+    | Successful
+
+union MoveRoomResult =
     | AdvancedError
     | Successful
 
@@ -1248,6 +1303,54 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_moveRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["prevRoomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prevRoomID"))
+		arg1, err = ec.unmarshalOID2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["prevRoomID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_readMsg_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["msgID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("msgID"))
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["msgID"] = arg1
 	return args, nil
 }
 
@@ -2748,6 +2851,130 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	return ec.marshalNLoginResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐLoginResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_moveRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_moveRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().MoveRoom(rctx, args["roomID"].(int), args["prevRoomID"].(*int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuth == nil {
+				return nil, errors.New("directive isAuth is not implemented")
+			}
+			return ec.directives.IsAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MoveRoomResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/messenger-for-employee/graph/model.MoveRoomResult`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MoveRoomResult)
+	fc.Result = res
+	return ec.marshalNMoveRoomResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMoveRoomResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_readMsg(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_readMsg_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().ReadMsg(rctx, args["roomID"].(int), args["msgID"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuth == nil {
+				return nil, errors.New("directive isAuth is not implemented")
+			}
+			return ec.directives.IsAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.ReadMsgResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/messenger-for-employee/graph/model.ReadMsgResult`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ReadMsgResult)
+	fc.Result = res
+	return ec.marshalNReadMsgResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐReadMsgResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_refreshTokens(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3703,6 +3930,38 @@ func (ec *executionContext) _Room_view(ctx context.Context, field graphql.Collec
 	res := resTmp.(model.RoomType)
 	fc.Result = res
 	return ec.marshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_prevRoomID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrevRoomID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_lastMessageRead(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -5793,7 +6052,53 @@ func (ec *executionContext) _MessagesResult(ctx context.Context, sel ast.Selecti
 	}
 }
 
+func (ec *executionContext) _MoveRoomResult(ctx context.Context, sel ast.SelectionSet, obj model.MoveRoomResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _MutationResult(ctx context.Context, sel ast.SelectionSet, obj model.MutationResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _ReadMsgResult(ctx context.Context, sel ast.SelectionSet, obj model.ReadMsgResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
@@ -5935,7 +6240,7 @@ func (ec *executionContext) _TagsResult(ctx context.Context, sel ast.SelectionSe
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "MeResult", "RoomsResult", "TagsResult", "EmployeesResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMsgResult", "MessagesResult", "EditListenEventCollectionResult"}
+var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "MeResult", "RoomsResult", "TagsResult", "EmployeesResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMsgResult", "ReadMsgResult", "MoveRoomResult", "MessagesResult", "EditListenEventCollectionResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -6666,6 +6971,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "moveRoom":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_moveRoom(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "readMsg":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_readMsg(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "refreshTokens":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_refreshTokens(ctx, field)
@@ -7035,6 +7360,13 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "prevRoomID":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Room_prevRoomID(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		case "lastMessageRead":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_lastMessageRead(ctx, field, obj)
@@ -7175,7 +7507,7 @@ func (ec *executionContext) _SubscriptionBody(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var successfulImplementors = []string{"Successful", "MutationResult", "RegisterResult", "SendMsgResult"}
+var successfulImplementors = []string{"Successful", "MutationResult", "RegisterResult", "SendMsgResult", "ReadMsgResult", "MoveRoomResult"}
 
 func (ec *executionContext) _Successful(ctx context.Context, sel ast.SelectionSet, obj *model.Successful) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, successfulImplementors)
@@ -8140,6 +8472,16 @@ func (ec *executionContext) marshalNMessagesResult2githubᚗcomᚋsaimeᚑ0ᚋme
 	return ec._MessagesResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMoveRoomResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMoveRoomResult(ctx context.Context, sel ast.SelectionSet, v model.MoveRoomResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MoveRoomResult(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPersonalData2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐPersonalData(ctx context.Context, sel ast.SelectionSet, v *model.PersonalData) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8148,6 +8490,16 @@ func (ec *executionContext) marshalNPersonalData2ᚖgithubᚗcomᚋsaimeᚑ0ᚋm
 		return graphql.Null
 	}
 	return ec._PersonalData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReadMsgResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐReadMsgResult(ctx context.Context, sel ast.SelectionSet, v model.ReadMsgResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ReadMsgResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRefreshTokensResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRefreshTokensResult(ctx context.Context, sel ast.SelectionSet, v model.RefreshTokensResult) graphql.Marshaler {

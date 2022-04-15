@@ -32,8 +32,16 @@ type MessagesResult interface {
 	IsMessagesResult()
 }
 
+type MoveRoomResult interface {
+	IsMoveRoomResult()
+}
+
 type MutationResult interface {
 	IsMutationResult()
+}
+
+type ReadMsgResult interface {
+	IsReadMsgResult()
 }
 
 type RefreshTokensResult interface {
@@ -70,6 +78,8 @@ func (AdvancedError) IsLoginResult()                     {}
 func (AdvancedError) IsRefreshTokensResult()             {}
 func (AdvancedError) IsRegisterResult()                  {}
 func (AdvancedError) IsSendMsgResult()                   {}
+func (AdvancedError) IsReadMsgResult()                   {}
+func (AdvancedError) IsMoveRoomResult()                  {}
 func (AdvancedError) IsMessagesResult()                  {}
 func (AdvancedError) IsEditListenEventCollectionResult() {}
 
@@ -217,6 +227,7 @@ type Room struct {
 	RoomID          int      `json:"roomID"`
 	Name            string   `json:"name"`
 	View            RoomType `json:"view"`
+	PrevRoomID      *int     `json:"prevRoomID"`
 	LastMessageRead int      `json:"lastMessageRead"`
 	LastMessageID   int      `json:"lastMessageID"`
 	Members         *Members `json:"members"`
@@ -240,6 +251,8 @@ type Successful struct {
 func (Successful) IsMutationResult() {}
 func (Successful) IsRegisterResult() {}
 func (Successful) IsSendMsgResult()  {}
+func (Successful) IsReadMsgResult()  {}
+func (Successful) IsMoveRoomResult() {}
 
 type Tag struct {
 	TagID int    `json:"tagID"`

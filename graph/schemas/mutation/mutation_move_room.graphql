@@ -1,0 +1,4 @@
+extend type Mutation {
+    moveRoom(roomID: ID!, prevRoomID: ID): MoveRoomResult! @goField(forceResolver: true) @isAuth
+}
+
