@@ -89,7 +89,7 @@ type Messages {
 type Me {
     employee: Employee!
     personal: PersonalData!
-    rooms: Rooms! @goField(forceResolver: true)
+    rooms(params: Params!): Rooms! @goField(forceResolver: true)
 }
 
 type ListenCollection {

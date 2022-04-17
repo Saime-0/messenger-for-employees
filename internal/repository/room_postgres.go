@@ -19,13 +19,15 @@ func NewRoomsRepo(db *sql.DB) *RoomsRepo {
 }
 
 // without filter
+// fix: перевернут порядок комнат
+// unused
 func (r *RoomsRepo) EmployeeRooms(employeeID int, params *model.Params) (*model.Rooms, error) {
 	rooms := &model.Rooms{
 		Rooms: []*model.Room{},
 	}
 
 	rows, err := r.db.Query(`
-		WITH seq AS (
+		WITH seq(seq) AS (
 		    SELECT room_seq[
 		        (select 1+coalesce($2,0)):
                 (select 1+coalesce($2,0)) + (select coalesce($3, array_length(room_seq, 1)))] 
@@ -33,6 +35,8 @@ func (r *RoomsRepo) EmployeeRooms(employeeID int, params *model.Params) (*model.
 		)
 		SELECT r.room_id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.prev_id
 		FROM rooms r
+		JOIN seq 
+		    ON r.room_id = ANY(seq.seq)
 		JOIN members m 
 		    ON m.room_id = r.room_id AND m.emp_id = $1 
 		JOIN msg_state c 

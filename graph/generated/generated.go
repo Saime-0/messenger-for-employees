@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 	Me struct {
 		Employee func(childComplexity int) int
 		Personal func(childComplexity int) int
-		Rooms    func(childComplexity int) int
+		Rooms    func(childComplexity int, params model.Params) int
 	}
 
 	Member struct {
@@ -216,7 +216,7 @@ type ListenCollectionResolver interface {
 	Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error)
 }
 type MeResolver interface {
-	Rooms(ctx context.Context, obj *model.Me) (*model.Rooms, error)
+	Rooms(ctx context.Context, obj *model.Me, params model.Params) (*model.Rooms, error)
 }
 type MemberResolver interface {
 	Employee(ctx context.Context, obj *model.Member) (*model.Employee, error)
@@ -410,7 +410,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Me.Rooms(childComplexity), true
+		args, err := ec.field_Me_rooms_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Me.Rooms(childComplexity, args["params"].(model.Params)), true
 
 	case "Member.employee":
 		if e.complexity.Member.Employee == nil {
@@ -1014,7 +1019,7 @@ type Messages {
 type Me {
     employee: Employee!
     personal: PersonalData!
-    rooms: Rooms! @goField(forceResolver: true)
+    rooms(params: Params!): Rooms! @goField(forceResolver: true)
 }
 
 type ListenCollection {
@@ -1248,6 +1253,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Me_rooms_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.Params
+	if tmp, ok := rawArgs["params"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("params"))
+		arg0, err = ec.unmarshalNParams2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐParams(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["params"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_editListenEventCollection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -2344,9 +2364,16 @@ func (ec *executionContext) _Me_rooms(ctx context.Context, field graphql.Collect
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Me_rooms_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Me().Rooms(rctx, obj)
+		return ec.resolvers.Me().Rooms(rctx, obj, args["params"].(model.Params))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8480,6 +8507,11 @@ func (ec *executionContext) marshalNMoveRoomResult2githubᚗcomᚋsaimeᚑ0ᚋme
 		return graphql.Null
 	}
 	return ec._MoveRoomResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNParams2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐParams(ctx context.Context, v interface{}) (model.Params, error) {
+	res, err := ec.unmarshalInputParams(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPersonalData2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐPersonalData(ctx context.Context, sel ast.SelectionSet, v *model.PersonalData) graphql.Marshaler {

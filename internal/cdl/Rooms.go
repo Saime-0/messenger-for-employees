@@ -15,13 +15,15 @@ type (
 	}
 	RoomsInp struct {
 		EmployeeID int
+		Params     *model.Params
 	}
 )
 
-func (d *Dataloader) Rooms(empID int) (*model.Rooms, error) {
+func (d *Dataloader) Rooms(empID int, params *model.Params) (*model.Rooms, error) {
 	res := <-d.categories.Rooms.addBaseRequest(
 		&RoomsInp{
 			EmployeeID: empID,
+			Params:     params,
 		},
 		&RoomsResult{
 			Rooms: &model.Rooms{
@@ -39,28 +41,31 @@ func (c *parentCategory) rooms() {
 	var (
 		inp = c.Requests
 
-		ptrs   []chanPtr
-		empIDs []int
+		ptrs    []chanPtr
+		empIDs  []int
+		limits  []*int
+		offsets []*int
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
 		empIDs = append(empIDs, query.Inp.(*RoomsInp).EmployeeID)
+		limits = append(limits, query.Inp.(*RoomsInp).Params.Limit)
+		offsets = append(offsets, query.Inp.(*RoomsInp).Params.Offset)
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr,
-				coalesce(r.room_id, 0),
-				coalesce(r.name, ''),
-				coalesce(r.view, 'TALK'),
-				coalesce(m.last_msg_read, 0),
-				coalesce(c.last_msg_id, 0)
-		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, empid)
-		LEFT JOIN members m ON m.emp_id = inp.empid
-		LEFT JOIN rooms r on r.room_id = m.room_id
-		LEFT JOIN msg_state c on r.room_id = c.room_id
-		`,
+		SELECT ptr, room_id, name, view, last_msg_read, last_msg_id, prev_id 
+		FROM load_emp_rooms(
+	        $1::text[],
+		    $2::bigint[],
+		    $3::int[],
+		    $4::int[]
+		)
+	`,
 		pq.Array(ptrs),
 		pq.Array(empIDs),
+		pq.Array(limits),
+		pq.Array(offsets),
 	)
 	if err != nil {
 		//c.Dataloader.healer.Alert("rooms:" + err.Desk())
@@ -75,7 +80,7 @@ func (c *parentCategory) rooms() {
 	for rows.Next() {
 		m := new(model.Room)
 
-		if err = rows.Scan(&ptr, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&ptr, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.PrevRoomID); err != nil {
 			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Desk())
 			c.Error = err
 			return

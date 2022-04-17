@@ -36,16 +36,17 @@ func (r *listenCollectionResolver) Collection(ctx context.Context, obj *model.Li
 	return collection, nil
 }
 
-func (r *meResolver) Rooms(ctx context.Context, obj *model.Me) (*model.Rooms, error) {
+func (r *meResolver) Rooms(ctx context.Context, obj *model.Me, params model.Params) (*model.Rooms, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Me.EmployeeRooms", &bson.M{
 		"employeeID (obj.EmpID.EmpID)": obj.Employee.EmpID,
+		"params":                       params,
 	})
 	defer node.MethodTiming()
 
-	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID)
+	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID, &params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return nil, cerrors.New("ошибка при попытке получить данные")
