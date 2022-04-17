@@ -261,3 +261,33 @@ BEGIN
 
 end;
 $$;
+
+create function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint, prev_id bigint)
+    language plpgsql
+as $$
+declare emp_rooms text[][] = array[]::text[][]; -- {{ptrs}, {empids}, {seqs}}
+begin
+    FOR i IN 1..array_length(ptrs, 1) LOOP
+            emp_rooms[1] = array_append(emp_rooms[1]::text[], ptrs[i]::text);
+            emp_rooms[2] = array_append(emp_rooms[2]::text[], empIDs[i]::text);
+            emp_rooms[3] = array_append(emp_rooms[3]::text[], (
+                SELECT room_seq[
+                           (select coalesce(array_length(room_seq, 1) - coalesce(offsets[i], 0)+1-limits[i], 1)):
+                           (select array_length(room_seq, 1) - coalesce(offsets[i], 0))]
+                FROM employees WHERE emp_id = empIDs[i]
+            )::text);
+        END LOOP;
+    return query SELECT inp.ptr,
+                        coalesce(r.room_id, 0),
+                        coalesce(r.name, ''),
+                        coalesce(r.view, 'TALK'),
+                        coalesce(m.last_msg_read, 0),
+                        coalesce(c.last_msg_id, 0),
+                        m.prev_id
+                 FROM unnest(emp_rooms[1]::text[], emp_rooms[2]::bigint[], emp_rooms[3]::text[][]) inp(ptr, empid, seq)
+                          LEFT JOIN members m ON m.emp_id = inp.empid
+                          LEFT JOIN rooms r on r.room_id = m.room_id AND r.room_id = ANY (inp.seq::bigint[])
+                          LEFT JOIN msg_state c on r.room_id = c.room_id;
+end;
+$$;
+
