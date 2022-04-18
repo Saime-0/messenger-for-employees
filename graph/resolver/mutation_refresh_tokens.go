@@ -32,7 +32,9 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
-
+	if sessionID == 0 {
+		return resp.Error(resp.ErrBadRequest, "неверный токен"), nil
+	}
 	var (
 		session *models.RefreshSession
 	)

@@ -46,9 +46,10 @@ func (r *AuthRepo) CreateRefreshSession(employeeID int, sessionModel *models.Ref
 
 func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.RefreshSession) (err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO refresh_sessions (emp_id, refresh_token, expires_at)
-		VALUES ($1, $2, $3)
-		RETURNING id`,
+		UPDATE refresh_sessions
+		SET refresh_token = $2, expires_at = $3
+		WHERE id = $1
+	`,
 		sessionID,
 		sessionModel.RefreshToken,
 		//sessionModel.UserAgent,
@@ -87,7 +88,8 @@ func (r *AuthRepo) OverflowDelete(employeeID, limit int) (err error) {
 
 func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, employeeID int, err error) {
 	err = r.db.QueryRow(`
-		SELECT id, emp_id
+		SELECT 
+		    coalesce(id,0), coalesce(emp_id,0)
 		FROM refresh_sessions
 		WHERE refresh_token = $1`,
 		token,
