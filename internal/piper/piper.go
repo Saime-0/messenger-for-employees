@@ -7,11 +7,12 @@ import (
 	"github.com/saime-0/messenger-for-employee/internal/healer"
 	"github.com/saime-0/messenger-for-employee/internal/repository"
 	"github.com/saime-0/messenger-for-employee/internal/res"
+	"sync"
 )
 
 type Pipeline struct {
-	Nodes map[string]*Node
-
+	Nodes      map[string]*Node
+	mu         *sync.Mutex
 	repos      *repository.Repositories
 	healer     *healer.Healer
 	dataloader *cdl.Dataloader

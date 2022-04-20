@@ -76,12 +76,16 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 
 		Request: request,
 	}
+	p.mu.Lock()
 	p.Nodes[id] = n
+	p.mu.Unlock()
 	return n, request
 }
 
 func (p *Pipeline) DeleteNode(id string) {
+	p.mu.Lock()
 	delete(p.Nodes, id)
+	p.mu.Unlock()
 }
 
 func (n *Node) Execute() {
