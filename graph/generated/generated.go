@@ -123,6 +123,8 @@ type ComplexityRoot struct {
 		CreatedAt   func(childComplexity int) int
 		Employee    func(childComplexity int) int
 		MsgID       func(childComplexity int) int
+		Next        func(childComplexity int) int
+		Prev        func(childComplexity int) int
 		Room        func(childComplexity int) int
 		TargetMsgID func(childComplexity int) int
 	}
@@ -167,6 +169,7 @@ type ComplexityRoot struct {
 		LastMessageID   func(childComplexity int) int
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
+		Messages        func(childComplexity int, startMsg int, created model.MsgCreated, count int) int
 		Name            func(childComplexity int) int
 		PrevRoomID      func(childComplexity int) int
 		RoomID          func(childComplexity int) int
@@ -244,6 +247,8 @@ type QueryResolver interface {
 	Tags(ctx context.Context, tagIDs []int, params *model.Params) (model.TagsResult, error)
 }
 type RoomResolver interface {
+	Messages(ctx context.Context, obj *model.Room, startMsg int, created model.MsgCreated, count int) (*model.Messages, error)
+
 	Members(ctx context.Context, obj *model.Room) (*model.Members, error)
 }
 type SubscriptionResolver interface {
@@ -487,6 +492,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.MsgID(childComplexity), true
 
+	case "Message.next":
+		if e.complexity.Message.Next == nil {
+			break
+		}
+
+		return e.complexity.Message.Next(childComplexity), true
+
+	case "Message.prev":
+		if e.complexity.Message.Prev == nil {
+			break
+		}
+
+		return e.complexity.Message.Prev(childComplexity), true
+
 	case "Message.room":
 		if e.complexity.Message.Room == nil {
 			break
@@ -718,6 +737,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Members(childComplexity), true
+
+	case "Room.messages":
+		if e.complexity.Room.Messages == nil {
+			break
+		}
+
+		args, err := ec.field_Room_messages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Room.Messages(childComplexity, args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int)), true
 
 	case "Room.name":
 		if e.complexity.Room.Name == nil {
@@ -973,11 +1004,19 @@ type PersonalData {
     phoneNumber: String!
     token: String!
 }
-
+enum MsgCreated {
+    AFTER
+    BEFORE
+}
 type Room {
     roomID: ID!
     name: String!
     view: RoomType!
+    messages(
+        startMsg: ID!
+        created: MsgCreated!
+        count: Int!
+    ): Messages! @goField(forceResolver: true)
     # for the client
     prevRoomID: ID
     lastMessageRead: ID!
@@ -1007,6 +1046,8 @@ type Tags {
 type Message {
     room: Room! @goField(forceResolver: true)
     msgID: ID!
+    next: ID
+    prev: ID
     employee: Employee! @goField(forceResolver: true)
     targetMsgID: Message @goField(forceResolver: true)
     body: String!
@@ -1566,6 +1607,39 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["params"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Room_messages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["startMsg"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startMsg"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["startMsg"] = arg0
+	var arg1 model.MsgCreated
+	if tmp, ok := rawArgs["created"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("created"))
+		arg1, err = ec.unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["created"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["count"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["count"] = arg2
 	return args, nil
 }
 
@@ -2665,6 +2739,70 @@ func (ec *executionContext) _Message_msgID(ctx context.Context, field graphql.Co
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_next(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Next, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Message_prev(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Message",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Prev, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_employee(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -3957,6 +4095,48 @@ func (ec *executionContext) _Room_view(ctx context.Context, field graphql.Collec
 	res := resTmp.(model.RoomType)
 	fc.Result = res
 	return ec.marshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Room_messages_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Room().Messages(rctx, obj, args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Messages)
+	fc.Result = res
+	return ec.marshalNMessages2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_prevRoomID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -6873,6 +7053,20 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "next":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Message_next(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "prev":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Message_prev(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		case "employee":
 			field := field
 
@@ -7387,6 +7581,26 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "messages":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Room_messages(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "prevRoomID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_prevRoomID(ctx, field, obj)
@@ -8489,6 +8703,20 @@ func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessen
 	return ec._Message(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMessages2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx context.Context, sel ast.SelectionSet, v model.Messages) graphql.Marshaler {
+	return ec._Messages(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMessages2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx context.Context, sel ast.SelectionSet, v *model.Messages) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Messages(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNMessagesResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessagesResult(ctx context.Context, sel ast.SelectionSet, v model.MessagesResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8507,6 +8735,16 @@ func (ec *executionContext) marshalNMoveRoomResult2githubᚗcomᚋsaimeᚑ0ᚋme
 		return graphql.Null
 	}
 	return ec._MoveRoomResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx context.Context, v interface{}) (model.MsgCreated, error) {
+	var res model.MsgCreated
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx context.Context, sel ast.SelectionSet, v model.MsgCreated) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNParams2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐParams(ctx context.Context, v interface{}) (model.Params, error) {

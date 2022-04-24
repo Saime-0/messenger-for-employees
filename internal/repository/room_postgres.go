@@ -112,7 +112,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	return rooms, nil
 }
 
-func (r *RoomsRepo) FindMessages(empID int, inp *model.FindMessages, params *model.Params) (*model.Messages, error) {
+func (r *RoomsRepo) FindMessages(inp *model.FindMessages, params *model.Params) (*model.Messages, error) {
 
 	messages := &model.Messages{
 		Messages: []*model.Message{},
@@ -172,7 +172,7 @@ func (r *RoomsRepo) FindMessages(empID int, inp *model.FindMessages, params *mod
 			return nil, err
 		}
 		if targetID != nil {
-			m.TargetMsgID = &model.Message{MsgID: *targetID}
+			m.TargetMsgID = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
 		}
 		messages.Messages = append(messages.Messages, m)
 	}
@@ -331,4 +331,79 @@ func (r RoomsRepo) RoomMembersID(roomID int) (employeeIDs []int, err error) {
 	}
 
 	return
+}
+
+func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage, error) {
+	message := new(model.NewMessage)
+	err := r.db.QueryRow(`
+		INSERT INTO messages (room_id, msg_id, emp_id,target_id, body)
+		SELECT $1, msg_count+1, $2, $3, $4
+		FROM msg_state WHERE room_id = $1
+		RETURNING msg_id, room_id, target_id, emp_id, body, created_at
+		`,
+		inp.RoomID,
+		inp.EmployeeID,
+		inp.TargetMsgID,
+		inp.Body,
+	).Scan(
+		&message.MsgID,
+		&message.RoomID,
+		&message.TargetMsgID,
+		&message.EmpID,
+		&message.Body,
+		&message.CreatedAt,
+	)
+
+	return message, err
+}
+
+func (r *RoomsRepo) RoomMessages(roomID int, startMsg int, created model.MsgCreated, count int) (*model.Messages, error) {
+	messages := &model.Messages{
+		Messages: []*model.Message{},
+	}
+	// lessToGreat = true if created == after
+	// lessToGreat = false if created == before
+	lessToGreat := true
+	if created == model.MsgCreatedBefore {
+		lessToGreat = false
+	}
+	var rows, err = r.db.Query(`
+		SELECT room_id, msg_id, emp_id, target_id, body, created_at, prev, next
+		FROM messages
+		WHERE room_id = $1 
+			AND (
+				$3 = false AND msg_id <= $2
+				OR
+				$3 = true AND msg_id >= $2
+	    	)
+		order by $3, 
+                 case when $3 then msg_id end asc,
+                 case when not $3 then msg_id end desc
+		limit $4
+	`,
+		roomID,
+		startMsg,
+		lessToGreat,
+		count,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		m := &model.Message{Room: new(model.Room), Employee: new(model.Employee)}
+		var targetID *int
+
+		if err = rows.Scan(&m.Room.RoomID, &m.MsgID, &m.Employee.EmpID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
+			return nil, err
+		}
+		if targetID != nil {
+			m.TargetMsgID = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
+		}
+
+		messages.Messages = append(messages.Messages, m)
+	}
+
+	return messages, nil
 }

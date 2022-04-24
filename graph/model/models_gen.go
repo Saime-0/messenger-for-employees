@@ -189,6 +189,8 @@ type Members struct {
 type Message struct {
 	Room        *Room     `json:"room"`
 	MsgID       int       `json:"msgID"`
+	Next        *int      `json:"next"`
+	Prev        *int      `json:"prev"`
 	Employee    *Employee `json:"employee"`
 	TargetMsgID *Message  `json:"targetMsgID"`
 	Body        string    `json:"body"`
@@ -224,13 +226,14 @@ type PersonalData struct {
 }
 
 type Room struct {
-	RoomID          int      `json:"roomID"`
-	Name            string   `json:"name"`
-	View            RoomType `json:"view"`
-	PrevRoomID      *int     `json:"prevRoomID"`
-	LastMessageRead int      `json:"lastMessageRead"`
-	LastMessageID   int      `json:"lastMessageID"`
-	Members         *Members `json:"members"`
+	RoomID          int       `json:"roomID"`
+	Name            string    `json:"name"`
+	View            RoomType  `json:"view"`
+	Messages        *Messages `json:"messages"`
+	PrevRoomID      *int      `json:"prevRoomID"`
+	LastMessageRead int       `json:"lastMessageRead"`
+	LastMessageID   int       `json:"lastMessageID"`
+	Members         *Members  `json:"members"`
 }
 
 type Rooms struct {
@@ -493,6 +496,47 @@ func (e *FetchType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FetchType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MsgCreated string
+
+const (
+	MsgCreatedAfter  MsgCreated = "AFTER"
+	MsgCreatedBefore MsgCreated = "BEFORE"
+)
+
+var AllMsgCreated = []MsgCreated{
+	MsgCreatedAfter,
+	MsgCreatedBefore,
+}
+
+func (e MsgCreated) IsValid() bool {
+	switch e {
+	case MsgCreatedAfter, MsgCreatedBefore:
+		return true
+	}
+	return false
+}
+
+func (e MsgCreated) String() string {
+	return string(e)
+}
+
+func (e *MsgCreated) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MsgCreated(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MsgCreated", str)
+	}
+	return nil
+}
+
+func (e MsgCreated) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

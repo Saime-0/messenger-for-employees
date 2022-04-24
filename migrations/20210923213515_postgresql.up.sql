@@ -42,6 +42,7 @@ create table msg_state
     room_id bigint not null,
     msg_count bigint default 0 not null,
     last_msg_id bigint default 0 not null,
+    next_msg_id bigint default 1 not null,
     constraint msg_count_pkey
         primary key (room_id),
     constraint msg_count_room_id_fkey
@@ -90,6 +91,8 @@ create table messages
     target_id bigint,
     body varchar(2048) not null,
     created_at bigint default unix_utc_now() not null,
+    prev bigint,
+    next bigint,
     foreign key (room_id) references rooms
         on delete cascade,
     foreign key (emp_id) references employees
@@ -108,25 +111,31 @@ as $$
 BEGIN
     if tg_op = 'INSERT' then
         update msg_state
-        set
-            msg_count = msg_count + 1,
-            last_msg_id = new.msg_id
+        set msg_count   = msg_count + 1,
+            last_msg_id = new.msg_id,
+            next_msg_id = next_msg_id + 1
         where msg_state.room_id = new.room_id;
         return new;
-    else if tg_op = 'DELETE' then
-        update msg_state
-        set
-            msg_count = msg_count - 1,
-            last_msg_id = (
-                select m.msg_id
-                from messages m
-                where m.room_id = old.room_id
-                order by m.msg_id desc
-                limit 1
-            )
-        where msg_state.room_id = old.room_id;
-        return old;
-    end if;
+    else
+        if tg_op = 'DELETE' then
+            update msg_state
+            set msg_count   = msg_count - 1,
+                last_msg_id = (select m.msg_id
+                               from messages m
+                               where m.room_id = old.room_id
+                               order by m.msg_id desc
+                               limit 1)
+            where msg_state.room_id = old.room_id;
+
+            update messages m
+            set next = old.next
+            where m.msg_id = old.prev;
+
+            update messages m
+            set prev = old.prev
+            where m.msg_id = old.next;
+            return old;
+        end if;
     end if;
     raise exception 'operation could not be detected';
 end;
@@ -164,11 +173,15 @@ create function replace_msg_id() returns trigger
     language plpgsql
 as $$
 BEGIN
-    new.msg_id = (
-        SELECT m.last_msg_id+1
-        FROM msg_state m
-        WHERE m.room_id = new.room_id
-    );
+    new.msg_id = (SELECT m.next_msg_id
+                  FROM msg_state m
+                  WHERE m.room_id = new.room_id);
+    new.prev = (select m.last_msg_id
+                from msg_state m
+                where m.room_id = new.room_id);
+    update messages m
+    set next = new.msg_id
+    where m.room_id = new.room_id and m.msg_id = new.prev;
     return new;
 end;
 $$;

@@ -73,6 +73,19 @@ func (n Node) ValidID(id int) (fail bool) {
 	return
 }
 
+func (n Node) ValidMsgCount(count int) (fail bool) {
+	n.SwitchMethod("ValidMsgCount", &bson.M{
+		"count": count,
+	})
+	defer n.MethodTiming()
+
+	if !(count > 0 && count <= rules.MaxMsgCount) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("count must be more then 0 or less or equal then %d", rules.MaxMsgCount))
+		return true
+	}
+	return
+}
+
 func (n Node) ValidPassword(password string) (fail bool) {
 	n.SwitchMethod("ValidPassword", &bson.M{
 		"password": password,

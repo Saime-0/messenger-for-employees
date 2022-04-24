@@ -43,11 +43,19 @@ type PersonalData {
     phoneNumber: String!
     token: String!
 }
-
+enum MsgCreated {
+    AFTER
+    BEFORE
+}
 type Room {
     roomID: ID!
     name: String!
     view: RoomType!
+    messages(
+        startMsg: ID!
+        created: MsgCreated!
+        count: Int!
+    ): Messages! @goField(forceResolver: true)
     # for the client
     prevRoomID: ID
     lastMessageRead: ID!
@@ -77,6 +85,8 @@ type Tags {
 type Message {
     room: Room! @goField(forceResolver: true)
     msgID: ID!
+    next: ID
+    prev: ID
     employee: Employee! @goField(forceResolver: true)
     targetMsgID: Message @goField(forceResolver: true)
     body: String!

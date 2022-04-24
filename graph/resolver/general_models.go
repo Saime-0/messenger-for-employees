@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/messenger-for-employee/graph/generated"
 	"github.com/saime-0/messenger-for-employee/graph/model"
 	"github.com/saime-0/messenger-for-employee/internal/cerrors"
@@ -132,21 +131,50 @@ func (r *messageResolver) Employee(ctx context.Context, obj *model.Message) (*mo
 }
 
 func (r *messageResolver) TargetMsgID(ctx context.Context, obj *model.Message) (*model.Message, error) {
+	if obj.TargetMsgID == nil {
+		return nil, nil
+	}
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
 	node.SwitchMethod("Message.TargetMsgID", &bson.M{
-		"msgID (obj.TargetMsgID.MsgID)": obj.TargetMsgID.MsgID,
+		"msgID (obj.TargetMsgID.MsgID)":       obj.TargetMsgID.MsgID,
+		"msgID (obj.TargetMsgID.Room.RoomID)": obj.TargetMsgID.Room.RoomID,
 	})
 	defer node.MethodTiming()
 
-	message, err := r.Dataloader.Message(obj.TargetMsgID.MsgID)
+	message, err := r.Dataloader.Message(obj.TargetMsgID.Room.RoomID, obj.TargetMsgID.MsgID)
+	if err != nil {
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных")
+	}
+	return message, nil
+}
+
+func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, startMsg int, created model.MsgCreated, count int) (*model.Messages, error) {
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Room.Messages", &bson.M{
+		"roomID (obj.Rooms)": obj.RoomID,
+		"startMsg":           startMsg,
+		"created":            created,
+		"count":              count,
+	})
+	defer node.MethodTiming()
+
+	if node.ValidID(startMsg) ||
+		node.ValidMsgCount(count) {
+		return nil, cerrors.New(node.GetError().Error)
+	}
+
+	messages, err := r.Services.Repos.Rooms.RoomMessages(obj.RoomID, startMsg, created, count)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
 
-	return message, nil
+	return messages, nil
 }
 
 func (r *roomResolver) Members(ctx context.Context, obj *model.Room) (*model.Members, error) {

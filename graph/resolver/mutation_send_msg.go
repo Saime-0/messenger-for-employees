@@ -50,7 +50,7 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		})
 		defer n.MethodTiming()
 
-		return r.Services.Repos.Messages.CreateMessage(message)
+		return r.Services.Repos.Rooms.CreateMessage(message)
 	}(node)
 
 	if err != nil {

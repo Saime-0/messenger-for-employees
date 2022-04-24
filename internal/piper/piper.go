@@ -23,6 +23,7 @@ type Pipeline struct {
 func NewPipeline(cfg *config.Config2, repos *repository.Repositories, healer *healer.Healer, dataloader *cdl.Dataloader) *Pipeline {
 	return &Pipeline{
 		Nodes:      map[string]*Node{},
+		mu:         new(sync.Mutex),
 		repos:      repos,
 		healer:     healer,
 		dataloader: dataloader,
