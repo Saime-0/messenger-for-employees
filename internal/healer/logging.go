@@ -39,7 +39,7 @@ func (h *Healer) Emergency(document interface{}) {
 	h.log(clog.Emergency, document)
 }
 func (h *Healer) Alert(document interface{}) {
-	h.log(clog.Emergency, document)
+	h.log(clog.Alert, document)
 }
 func (h *Healer) Critical(document interface{}) {
 	h.log(clog.Critical, document)

@@ -38,7 +38,8 @@ func (r *queryResolver) RoomMessages(ctx context.Context, roomID int, startMsg i
 
 	messages, err := r.Services.Repos.Rooms.RoomMessages(roomID, startMsg, created, count)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

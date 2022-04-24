@@ -113,7 +113,6 @@ type Employee struct {
 	EmpID     int    `json:"empID"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
-	JoinedAt  int64  `json:"joinedAt"`
 	Tags      *Tags  `json:"tags"`
 }
 

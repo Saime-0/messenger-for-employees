@@ -146,7 +146,8 @@ func (n Node) EmailIsFree(email string) (fail bool) {
 
 	free, err := n.repos.Employees.EmailIsFree(email)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -167,7 +168,8 @@ func (n Node) IsMember(employeeID, roomID int) (fail bool) {
 
 	isMember, err := n.Dataloader.EmployeeIsRoomMember(employeeID, roomID)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -188,7 +190,8 @@ func (n Node) MessageExists(roomID, msgID int) (fail bool) {
 
 	exists, err := n.Dataloader.MessageExists(roomID, msgID)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -208,7 +211,8 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 	//if !n.repos.EmployeeRooms.RoomExistsByID(roomID) {
 	exists, err := n.Dataloader.RoomExistsByID(roomID)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -227,7 +231,8 @@ func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) 
 
 	exists, err := n.repos.Employees.EmployeeExistsByRequisites(input)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -247,7 +252,8 @@ func (n Node) GetEmployeeIDByRequisites(input *models.LoginRequisites, employeeI
 
 	_uid, err := n.repos.Employees.GetEmployeeIDByRequisites(input)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -294,7 +300,8 @@ func (n Node) EmployeeHasAccessToRooms(employeeID int, roomIDs []int) (fail bool
 	}
 	noAccessTo, err := n.repos.Rooms.EmployeeHasAccessToRooms(employeeID, roomIDs)
 	if err != nil {
-		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}

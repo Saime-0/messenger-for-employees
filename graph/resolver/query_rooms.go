@@ -35,7 +35,8 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 
 	rooms, err := r.Services.Repos.Rooms.FindRooms(clientID, &find, params)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

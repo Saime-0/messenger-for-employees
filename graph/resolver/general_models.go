@@ -24,7 +24,8 @@ func (r *employeeResolver) Tags(ctx context.Context, obj *model.Employee) (*mode
 
 	rooms, err := r.Dataloader.Tags(obj.EmpID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
 
@@ -48,7 +49,8 @@ func (r *meResolver) Rooms(ctx context.Context, obj *model.Me, params model.Para
 
 	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID, &params)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
 
@@ -66,7 +68,7 @@ func (r *memberResolver) Employee(ctx context.Context, obj *model.Member) (*mode
 
 	employee, err := r.Dataloader.Employee(obj.Employee.EmpID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
 
@@ -86,7 +88,8 @@ func (r *memberResolver) Room(ctx context.Context, obj *model.Member) (*model.Ro
 
 	room, err := r.Dataloader.Room(clientID, obj.Room.RoomID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
 
@@ -106,7 +109,8 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 
 	room, err := r.Dataloader.Room(clientID, obj.Room.RoomID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
 
@@ -124,7 +128,8 @@ func (r *messageResolver) Employee(ctx context.Context, obj *model.Message) (*mo
 
 	employee, err := r.Dataloader.Employee(obj.Employee.EmpID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
 
@@ -146,7 +151,8 @@ func (r *messageResolver) TargetMsg(ctx context.Context, obj *model.Message) (*m
 
 	message, err := r.Dataloader.Message(obj.TargetMsg.Room.RoomID, obj.TargetMsg.MsgID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
 	return message, nil
@@ -163,7 +169,8 @@ func (r *roomResolver) Members(ctx context.Context, obj *model.Room) (*model.Mem
 
 	members, err := r.Dataloader.Members(obj.RoomID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
 

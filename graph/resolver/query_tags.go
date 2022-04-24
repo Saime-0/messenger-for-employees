@@ -32,7 +32,8 @@ func (r *queryResolver) Tags(ctx context.Context, tagIDs []int, params *model.Pa
 
 	tags, err := r.Services.Repos.Tags.Tags(tagIDs, params)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

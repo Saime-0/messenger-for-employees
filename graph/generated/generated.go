@@ -77,7 +77,6 @@ type ComplexityRoot struct {
 	Employee struct {
 		EmpID     func(childComplexity int) int
 		FirstName func(childComplexity int) int
-		JoinedAt  func(childComplexity int) int
 		LastName  func(childComplexity int) int
 		Tags      func(childComplexity int) int
 	}
@@ -331,13 +330,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Employee.FirstName(childComplexity), true
-
-	case "Employee.joinedAt":
-		if e.complexity.Employee.JoinedAt == nil {
-			break
-		}
-
-		return e.complexity.Employee.JoinedAt(childComplexity), true
 
 	case "Employee.lastName":
 		if e.complexity.Employee.LastName == nil {
@@ -990,7 +982,6 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
-    joinedAt: Int64!
     # for the client
     tags: Tags! @goField(forceResolver: true)
 }
@@ -2079,41 +2070,6 @@ func (ec *executionContext) _Employee_lastName(ctx context.Context, field graphq
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Employee_joinedAt(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Employee",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.JoinedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt642int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Employee_tags(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
@@ -6675,16 +6631,6 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 		case "lastName":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Employee_lastName(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "joinedAt":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Employee_joinedAt(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

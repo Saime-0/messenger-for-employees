@@ -37,7 +37,8 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 
 	messages, err := r.Services.Repos.Rooms.FindMessages(&find, params)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

@@ -77,7 +77,8 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 			func() {
 				err := r.Services.Repos.Employees.DeleteRefreshSession(sessionID)
 				if err != nil {
-					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 				}
 			},
 			expAt,

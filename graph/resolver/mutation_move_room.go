@@ -36,7 +36,8 @@ func (r *mutationResolver) MoveRoom(ctx context.Context, roomID int, prevRoomID 
 	err := r.Services.Repos.Rooms.MoveRoom(clientID, roomID, prevRoomID)
 
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "не удалось переместить комнату"), nil
 	}
 

@@ -22,7 +22,8 @@ func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	clientID := utils.GetAuthDataFromCtx(ctx).EmployeeID
 	me, err := r.Services.Repos.Employees.Me(clientID)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить данные"), nil
 	}
 	if me == nil {

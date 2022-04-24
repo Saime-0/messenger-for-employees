@@ -29,7 +29,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 
 	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 	if sessionID == 0 {
@@ -48,7 +49,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 
 	err = r.Services.Repos.Auth.UpdateRefreshSession(sessionID, session)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -61,14 +63,16 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		r.Config.SecretSigningKey,
 	)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	if sessionKey != nil {
 		err = r.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
 		if err != nil {
-			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		}
 	}
 
@@ -77,7 +81,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 			func() {
 				err := r.Services.Repos.Employees.DeleteRefreshSession(sessionID)
 				if err != nil {
-					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 				}
 			},
 			sessionExpAt,

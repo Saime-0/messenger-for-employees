@@ -24,12 +24,11 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		Personal: new(model.PersonalData),
 	}
 	err := r.db.QueryRow(`
-		SELECT coalesce(e.emp_id, 0), 
-		       coalesce(e.first_name,''), 
-		       coalesce(e.last_name, ''), 
-		       coalesce(e.joined_at, 0),
-		       coalesce(e.email, ''), 
-		       coalesce(e.phone_number, ''), 
+		SELECT coalesce(e.emp_id, 0),
+		       coalesce(e.first_name,''),
+		       coalesce(e.last_name, ''),
+		       coalesce(e.email, ''),
+		       coalesce(e.phone_number, ''),
 		       coalesce(e.token, '')
 		FROM employees e
 		WHERE e.emp_id = $1`,
@@ -38,7 +37,6 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		&me.Employee.EmpID,
 		&me.Employee.FirstName,
 		&me.Employee.LastName,
-		&me.Employee.JoinedAt,
 		&me.Personal.Email,
 		&me.Personal.PhoneNumber,
 		&me.Personal.Token,
@@ -65,7 +63,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		}
 	}
 	rows, err := r.db.Query(`
-		SELECT e.emp_id, e.first_name, e.last_name, e.joined_at
+		SELECT e.emp_id, e.first_name, e.last_name
 		FROM employees e 
 		    LEFT JOIN positions p ON e.emp_id = p.emp_id 
 			LEFT JOIN members m ON m.emp_id = e.emp_id 
@@ -101,7 +99,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 	defer rows.Close()
 	for rows.Next() {
 		m := new(model.Employee)
-		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName, &m.JoinedAt); err != nil {
+		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName); err != nil {
 			return nil, err
 		}
 		users.Employees = append(users.Employees, m)

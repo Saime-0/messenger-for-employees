@@ -33,7 +33,8 @@ func (r *queryResolver) Employees(ctx context.Context, find model.FindEmployees,
 
 	employees, err := r.Services.Repos.Employees.FindEmployees(&find)
 	if err != nil {
-		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

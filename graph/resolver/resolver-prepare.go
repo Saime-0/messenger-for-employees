@@ -18,7 +18,8 @@ func (r *Resolver) RegularSchedule(interval int64) (err error) {
 
 		err = r.prepareScheduleRefreshSessions(end)
 		if err != nil {
-			r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+			r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 			panic(err)
 		}
 
@@ -65,7 +66,8 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 			// удаляю сессию, тк она уже истекла
 			err := r.Services.Repos.Employees.DeleteRefreshSession(rs.ID)
 			if err != nil {
-				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 			}
 			continue
 		}
@@ -74,7 +76,8 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 				// спланированное удаление
 				err := r.Services.Repos.Employees.DeleteRefreshSession(rs.ID)
 				if err != nil {
-					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 				}
 			},
 			rs.Exp,

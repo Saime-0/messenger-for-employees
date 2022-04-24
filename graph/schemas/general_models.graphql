@@ -30,7 +30,6 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
-    joinedAt: Int64!
     # for the client
     tags: Tags! @goField(forceResolver: true)
 }

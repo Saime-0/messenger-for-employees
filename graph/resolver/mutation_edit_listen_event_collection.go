@@ -39,7 +39,6 @@ func (r *mutationResolver) EditListenEventCollection(ctx context.Context, sessio
 
 	err := r.Subix.ModifyCollection(clientID, sessionKey, targetRooms, action, listenEvents)
 	if err != nil {
-		//node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrBadRequest, "не удалось обновить коллекцию"), nil
 	}
 
