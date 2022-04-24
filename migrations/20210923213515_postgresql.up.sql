@@ -129,11 +129,16 @@ BEGIN
 
             update messages m
             set next = old.next
-            where m.msg_id = old.prev;
+            where m.msg_id = old.prev and m.room_id = old.room_id;
 
             update messages m
             set prev = old.prev
-            where m.msg_id = old.next;
+            where m.msg_id = old.next and m.room_id = old.room_id;
+
+            update messages m
+            set target_id = 0
+            where m.target_id = old.msg_id and m.room_id = old.room_id;
+
             return old;
         end if;
     end if;
