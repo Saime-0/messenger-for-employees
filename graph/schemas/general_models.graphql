@@ -35,7 +35,7 @@ type Employee {
     tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
-    employees: [Employee!]
+    employees: [Employee!]!
 }
 
 type PersonalData {
@@ -51,11 +51,6 @@ type Room {
     roomID: ID!
     name: String!
     view: RoomType!
-    messages(
-        startMsg: ID!
-        created: MsgCreated!
-        count: Int!
-    ): Messages! @goField(forceResolver: true)
     # for the client
     prevRoomID: ID
     lastMessageRead: ID!
@@ -63,7 +58,7 @@ type Room {
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
-    rooms: [Room!]
+    rooms: [Room!]!
 }
 
 type Member {
@@ -71,7 +66,7 @@ type Member {
     room: Room! @goField(forceResolver: true)
 }
 type Members {
-    members: [Member!]
+    members: [Member!]!
 }
 
 type Tag {
@@ -79,7 +74,7 @@ type Tag {
     name: String!
 }
 type Tags {
-    tags: [Tag!]
+    tags: [Tag!]!
 }
 
 type Message {
@@ -88,12 +83,12 @@ type Message {
     next: ID
     prev: ID
     employee: Employee! @goField(forceResolver: true)
-    targetMsgID: Message @goField(forceResolver: true)
+    targetMsg: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
 }
 type Messages {
-    messages: [Message!]
+    messages: [Message!]!
 }
 
 type Me {

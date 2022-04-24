@@ -172,7 +172,7 @@ func (r *RoomsRepo) FindMessages(inp *model.FindMessages, params *model.Params) 
 			return nil, err
 		}
 		if targetID != nil {
-			m.TargetMsgID = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
+			m.TargetMsg = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
 		}
 		messages.Messages = append(messages.Messages, m)
 	}
@@ -399,7 +399,7 @@ func (r *RoomsRepo) RoomMessages(roomID int, startMsg int, created model.MsgCrea
 			return nil, err
 		}
 		if targetID != nil {
-			m.TargetMsgID = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
+			m.TargetMsg = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
 		}
 
 		messages.Messages = append(messages.Messages, m)

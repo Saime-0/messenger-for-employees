@@ -119,14 +119,14 @@ type ComplexityRoot struct {
 	}
 
 	Message struct {
-		Body        func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		Employee    func(childComplexity int) int
-		MsgID       func(childComplexity int) int
-		Next        func(childComplexity int) int
-		Prev        func(childComplexity int) int
-		Room        func(childComplexity int) int
-		TargetMsgID func(childComplexity int) int
+		Body      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Employee  func(childComplexity int) int
+		MsgID     func(childComplexity int) int
+		Next      func(childComplexity int) int
+		Prev      func(childComplexity int) int
+		Room      func(childComplexity int) int
+		TargetMsg func(childComplexity int) int
 	}
 
 	Messages struct {
@@ -158,18 +158,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Employees func(childComplexity int, find model.FindEmployees, params *model.Params) int
-		Me        func(childComplexity int) int
-		Messages  func(childComplexity int, find model.FindMessages, params *model.Params) int
-		Rooms     func(childComplexity int, find model.FindRooms, params *model.Params) int
-		Tags      func(childComplexity int, tagIDs []int, params *model.Params) int
+		Employees    func(childComplexity int, find model.FindEmployees, params *model.Params) int
+		Me           func(childComplexity int) int
+		Messages     func(childComplexity int, find model.FindMessages, params *model.Params) int
+		RoomMessages func(childComplexity int, roomID int, startMsg int, created model.MsgCreated, count int) int
+		Rooms        func(childComplexity int, find model.FindRooms, params *model.Params) int
+		Tags         func(childComplexity int, tagIDs []int, params *model.Params) int
 	}
 
 	Room struct {
 		LastMessageID   func(childComplexity int) int
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
-		Messages        func(childComplexity int, startMsg int, created model.MsgCreated, count int) int
 		Name            func(childComplexity int) int
 		PrevRoomID      func(childComplexity int) int
 		RoomID          func(childComplexity int) int
@@ -229,7 +229,7 @@ type MessageResolver interface {
 	Room(ctx context.Context, obj *model.Message) (*model.Room, error)
 
 	Employee(ctx context.Context, obj *model.Message) (*model.Employee, error)
-	TargetMsgID(ctx context.Context, obj *model.Message) (*model.Message, error)
+	TargetMsg(ctx context.Context, obj *model.Message) (*model.Message, error)
 }
 type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error)
@@ -243,12 +243,11 @@ type QueryResolver interface {
 	Employees(ctx context.Context, find model.FindEmployees, params *model.Params) (model.EmployeesResult, error)
 	Me(ctx context.Context) (model.MeResult, error)
 	Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error)
+	RoomMessages(ctx context.Context, roomID int, startMsg int, created model.MsgCreated, count int) (model.MessagesResult, error)
 	Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error)
 	Tags(ctx context.Context, tagIDs []int, params *model.Params) (model.TagsResult, error)
 }
 type RoomResolver interface {
-	Messages(ctx context.Context, obj *model.Room, startMsg int, created model.MsgCreated, count int) (*model.Messages, error)
-
 	Members(ctx context.Context, obj *model.Room) (*model.Members, error)
 }
 type SubscriptionResolver interface {
@@ -513,12 +512,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Message.Room(childComplexity), true
 
-	case "Message.targetMsgID":
-		if e.complexity.Message.TargetMsgID == nil {
+	case "Message.targetMsg":
+		if e.complexity.Message.TargetMsg == nil {
 			break
 		}
 
-		return e.complexity.Message.TargetMsgID(childComplexity), true
+		return e.complexity.Message.TargetMsg(childComplexity), true
 
 	case "Messages.messages":
 		if e.complexity.Messages.Messages == nil {
@@ -693,6 +692,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Messages(childComplexity, args["find"].(model.FindMessages), args["params"].(*model.Params)), true
 
+	case "Query.roomMessages":
+		if e.complexity.Query.RoomMessages == nil {
+			break
+		}
+
+		args, err := ec.field_Query_roomMessages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RoomMessages(childComplexity, args["roomID"].(int), args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int)), true
+
 	case "Query.rooms":
 		if e.complexity.Query.Rooms == nil {
 			break
@@ -737,18 +748,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Members(childComplexity), true
-
-	case "Room.messages":
-		if e.complexity.Room.Messages == nil {
-			break
-		}
-
-		args, err := ec.field_Room_messages_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Room.Messages(childComplexity, args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int)), true
 
 	case "Room.name":
 		if e.complexity.Room.Name == nil {
@@ -996,7 +995,7 @@ type Employee {
     tags: Tags! @goField(forceResolver: true)
 }
 type Employees {
-    employees: [Employee!]
+    employees: [Employee!]!
 }
 
 type PersonalData {
@@ -1012,11 +1011,6 @@ type Room {
     roomID: ID!
     name: String!
     view: RoomType!
-    messages(
-        startMsg: ID!
-        created: MsgCreated!
-        count: Int!
-    ): Messages! @goField(forceResolver: true)
     # for the client
     prevRoomID: ID
     lastMessageRead: ID!
@@ -1024,7 +1018,7 @@ type Room {
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
-    rooms: [Room!]
+    rooms: [Room!]!
 }
 
 type Member {
@@ -1032,7 +1026,7 @@ type Member {
     room: Room! @goField(forceResolver: true)
 }
 type Members {
-    members: [Member!]
+    members: [Member!]!
 }
 
 type Tag {
@@ -1040,7 +1034,7 @@ type Tag {
     name: String!
 }
 type Tags {
-    tags: [Tag!]
+    tags: [Tag!]!
 }
 
 type Message {
@@ -1049,12 +1043,12 @@ type Message {
     next: ID
     prev: ID
     employee: Employee! @goField(forceResolver: true)
-    targetMsgID: Message @goField(forceResolver: true)
+    targetMsg: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
 }
 type Messages {
-    messages: [Message!]
+    messages: [Message!]!
 }
 
 type Me {
@@ -1152,6 +1146,9 @@ input FindRooms {
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query/query_messages.graphql", Input: `extend type Query {
     messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField(forceResolver: true) @isAuth
+}`, BuiltIn: false},
+	{Name: "graph/schemas/query/query_room_messages.graphql", Input: `extend type Query {
+    roomMessages(roomID: ID! startMsg: ID! created: MsgCreated! count: Int!): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query/query_rooms.graphql", Input: `extend type Query {
     rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
@@ -1547,6 +1544,48 @@ func (ec *executionContext) field_Query_messages_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_roomMessages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["startMsg"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startMsg"))
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["startMsg"] = arg1
+	var arg2 model.MsgCreated
+	if tmp, ok := rawArgs["created"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("created"))
+		arg2, err = ec.unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["created"] = arg2
+	var arg3 int
+	if tmp, ok := rawArgs["count"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["count"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1607,39 +1646,6 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["params"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Room_messages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["startMsg"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startMsg"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["startMsg"] = arg0
-	var arg1 model.MsgCreated
-	if tmp, ok := rawArgs["created"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("created"))
-		arg1, err = ec.unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["created"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["count"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["count"] = arg2
 	return args, nil
 }
 
@@ -2170,11 +2176,14 @@ func (ec *executionContext) _Employees_employees(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Employee)
 	fc.Result = res
-	return ec.marshalOEmployee2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployeeᚄ(ctx, field.Selections, res)
+	return ec.marshalNEmployee2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployeeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListenCollection_sessionKey(ctx context.Context, field graphql.CollectedField, obj *model.ListenCollection) (ret graphql.Marshaler) {
@@ -2664,11 +2673,14 @@ func (ec *executionContext) _Members_members(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Member)
 	fc.Result = res
-	return ec.marshalOMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMemberᚄ(ctx, field.Selections, res)
+	return ec.marshalNMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMemberᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_room(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -2840,7 +2852,7 @@ func (ec *executionContext) _Message_employee(ctx context.Context, field graphql
 	return ec.marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Message_targetMsgID(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
+func (ec *executionContext) _Message_targetMsg(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2858,7 +2870,7 @@ func (ec *executionContext) _Message_targetMsgID(ctx context.Context, field grap
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Message().TargetMsgID(rctx, obj)
+		return ec.resolvers.Message().TargetMsg(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2967,11 +2979,14 @@ func (ec *executionContext) _Messages_messages(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Message)
 	fc.Result = res
-	return ec.marshalOMessage2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessageᚄ(ctx, field.Selections, res)
+	return ec.marshalNMessage2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessageᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3797,6 +3812,68 @@ func (ec *executionContext) _Query_messages(ctx context.Context, field graphql.C
 	return ec.marshalNMessagesResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessagesResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_roomMessages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_roomMessages_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().RoomMessages(rctx, args["roomID"].(int), args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuth == nil {
+				return nil, errors.New("directive isAuth is not implemented")
+			}
+			return ec.directives.IsAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MessagesResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/messenger-for-employee/graph/model.MessagesResult`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MessagesResult)
+	fc.Result = res
+	return ec.marshalNMessagesResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessagesResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_rooms(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4097,48 +4174,6 @@ func (ec *executionContext) _Room_view(ctx context.Context, field graphql.Collec
 	return ec.marshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Room",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Room_messages_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Room().Messages(rctx, obj, args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Messages)
-	fc.Result = res
-	return ec.marshalNMessages2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Room_prevRoomID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4301,11 +4336,14 @@ func (ec *executionContext) _Rooms_rooms(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Room)
 	fc.Result = res
-	return ec.marshalORoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomᚄ(ctx, field.Selections, res)
+	return ec.marshalNRoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Subscription_subscribe(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
@@ -4557,11 +4595,14 @@ func (ec *executionContext) _Tags_tags(ctx context.Context, field graphql.Collec
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*model.Tag)
 	fc.Result = res
-	return ec.marshalOTag2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTagᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TokenExpired_message(ctx context.Context, field graphql.CollectedField, obj *model.TokenExpired) (ret graphql.Marshaler) {
@@ -6699,6 +6740,9 @@ func (ec *executionContext) _Employees(ctx context.Context, sel ast.SelectionSet
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7002,6 +7046,9 @@ func (ec *executionContext) _Members(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7087,7 +7134,7 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
-		case "targetMsgID":
+		case "targetMsg":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -7096,7 +7143,7 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Message_targetMsgID(ctx, field, obj)
+				res = ec._Message_targetMsg(ctx, field, obj)
 				return res
 			}
 
@@ -7152,6 +7199,9 @@ func (ec *executionContext) _Messages(ctx context.Context, sel ast.SelectionSet,
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7470,6 +7520,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "roomMessages":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_roomMessages(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "rooms":
 			field := field
 
@@ -7581,26 +7654,6 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "messages":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Room_messages(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "prevRoomID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_prevRoomID(ctx, field, obj)
@@ -7676,6 +7729,9 @@ func (ec *executionContext) _Rooms(ctx context.Context, sel ast.SelectionSet, ob
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7837,6 +7893,9 @@ func (ec *executionContext) _Tags(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8387,6 +8446,50 @@ func (ec *executionContext) marshalNEmployee2githubᚗcomᚋsaimeᚑ0ᚋmessenge
 	return ec._Employee(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNEmployee2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployeeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Employee) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx context.Context, sel ast.SelectionSet, v *model.Employee) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8669,6 +8772,50 @@ func (ec *executionContext) marshalNMeResult2githubᚗcomᚋsaimeᚑ0ᚋmessenge
 	return ec._MeResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Member) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMember2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMember(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNMember2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMember(ctx context.Context, sel ast.SelectionSet, v *model.Member) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8693,6 +8840,50 @@ func (ec *executionContext) marshalNMembers2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessen
 	return ec._Members(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMessage2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Message) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessage(ctx context.Context, sel ast.SelectionSet, v *model.Message) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8701,20 +8892,6 @@ func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessen
 		return graphql.Null
 	}
 	return ec._Message(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNMessages2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx context.Context, sel ast.SelectionSet, v model.Messages) graphql.Marshaler {
-	return ec._Messages(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNMessages2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessages(ctx context.Context, sel ast.SelectionSet, v *model.Messages) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Messages(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMessagesResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessagesResult(ctx context.Context, sel ast.SelectionSet, v model.MessagesResult) graphql.Marshaler {
@@ -8786,6 +8963,50 @@ func (ec *executionContext) marshalNRoom2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑ
 	return ec._Room(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNRoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Room) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoom(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNRoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8853,6 +9074,50 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTag2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTag(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNTag2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTag(ctx context.Context, sel ast.SelectionSet, v *model.Tag) graphql.Marshaler {
@@ -9168,53 +9433,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalOEmployee2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployeeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Employee) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -9285,100 +9503,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) marshalOMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Member) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMember2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMember(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalOMessage2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Message) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessage(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalOMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMessage(ctx context.Context, sel ast.SelectionSet, v *model.Message) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -9392,53 +9516,6 @@ func (ec *executionContext) unmarshalOParams2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmesse
 	}
 	res, err := ec.unmarshalInputParams(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalORoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Room) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoom(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
@@ -9462,53 +9539,6 @@ func (ec *executionContext) marshalOSubscriptionBody2ᚖgithubᚗcomᚋsaimeᚑ0
 		return graphql.Null
 	}
 	return ec._SubscriptionBody(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOTag2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tag) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTag2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐTag(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

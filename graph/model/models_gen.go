@@ -187,14 +187,14 @@ type Members struct {
 }
 
 type Message struct {
-	Room        *Room     `json:"room"`
-	MsgID       int       `json:"msgID"`
-	Next        *int      `json:"next"`
-	Prev        *int      `json:"prev"`
-	Employee    *Employee `json:"employee"`
-	TargetMsgID *Message  `json:"targetMsgID"`
-	Body        string    `json:"body"`
-	CreatedAt   int64     `json:"createdAt"`
+	Room      *Room     `json:"room"`
+	MsgID     int       `json:"msgID"`
+	Next      *int      `json:"next"`
+	Prev      *int      `json:"prev"`
+	Employee  *Employee `json:"employee"`
+	TargetMsg *Message  `json:"targetMsg"`
+	Body      string    `json:"body"`
+	CreatedAt int64     `json:"createdAt"`
 }
 
 type Messages struct {
@@ -226,14 +226,13 @@ type PersonalData struct {
 }
 
 type Room struct {
-	RoomID          int       `json:"roomID"`
-	Name            string    `json:"name"`
-	View            RoomType  `json:"view"`
-	Messages        *Messages `json:"messages"`
-	PrevRoomID      *int      `json:"prevRoomID"`
-	LastMessageRead int       `json:"lastMessageRead"`
-	LastMessageID   int       `json:"lastMessageID"`
-	Members         *Members  `json:"members"`
+	RoomID          int      `json:"roomID"`
+	Name            string   `json:"name"`
+	View            RoomType `json:"view"`
+	PrevRoomID      *int     `json:"prevRoomID"`
+	LastMessageRead int      `json:"lastMessageRead"`
+	LastMessageID   int      `json:"lastMessageID"`
+	Members         *Members `json:"members"`
 }
 
 type Rooms struct {

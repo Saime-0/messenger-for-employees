@@ -86,7 +86,7 @@ func (c *parentCategory) message() {
 			m = nil
 		}
 		if targetID != nil {
-			m.TargetMsgID = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
+			m.TargetMsg = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
 		}
 
 		request := c.getRequest(ptr)
