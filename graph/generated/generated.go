@@ -160,7 +160,7 @@ type ComplexityRoot struct {
 		Employees    func(childComplexity int, find model.FindEmployees, params *model.Params) int
 		Me           func(childComplexity int) int
 		Messages     func(childComplexity int, find model.FindMessages, params *model.Params) int
-		RoomMessages func(childComplexity int, roomID int, startMsg int, created model.MsgCreated, count int) int
+		RoomMessages func(childComplexity int, byCreated *model.ByCreated, byRange *model.ByRange) int
 		Rooms        func(childComplexity int, find model.FindRooms, params *model.Params) int
 		Tags         func(childComplexity int, tagIDs []int, params *model.Params) int
 	}
@@ -242,7 +242,7 @@ type QueryResolver interface {
 	Employees(ctx context.Context, find model.FindEmployees, params *model.Params) (model.EmployeesResult, error)
 	Me(ctx context.Context) (model.MeResult, error)
 	Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error)
-	RoomMessages(ctx context.Context, roomID int, startMsg int, created model.MsgCreated, count int) (model.MessagesResult, error)
+	RoomMessages(ctx context.Context, byCreated *model.ByCreated, byRange *model.ByRange) (model.MessagesResult, error)
 	Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error)
 	Tags(ctx context.Context, tagIDs []int, params *model.Params) (model.TagsResult, error)
 }
@@ -694,7 +694,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RoomMessages(childComplexity, args["roomID"].(int), args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int)), true
+		return e.complexity.Query.RoomMessages(childComplexity, args["byCreated"].(*model.ByCreated), args["byRange"].(*model.ByRange)), true
 
 	case "Query.rooms":
 		if e.complexity.Query.Rooms == nil {
@@ -942,8 +942,7 @@ var sources = []*ast.Source{
 directive @isAuth on INPUT_FIELD_DEFINITION
     | FIELD_DEFINITION | SUBSCRIPTION
 
-directive @inputUnion on INPUT_FIELD_DEFINITION
-    | ARGUMENT_DEFINITION
+directive @inputUnion on ARGUMENT_DEFINITION
 
 directive @inputLeastOne on INPUT_FIELD_DEFINITION
     | ARGUMENT_DEFINITION | INPUT_OBJECT
@@ -1102,6 +1101,18 @@ input FindRooms {
     name: String
 }
 
+input ByCreated {
+    roomID: ID!
+    startMsg: ID!
+    created: MsgCreated!
+    count: Int!
+}
+input ByRange {
+    roomID: ID!
+    start: ID!
+    end: ID!
+}
+
 
 
 
@@ -1139,7 +1150,7 @@ input FindRooms {
     messages(find: FindMessages! @inputLeastOne, params: Params): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query/query_room_messages.graphql", Input: `extend type Query {
-    roomMessages(roomID: ID! startMsg: ID! created: MsgCreated! count: Int!): MessagesResult! @goField(forceResolver: true) @isAuth
+    roomMessages(byCreated:ByCreated @inputUnion, byRange:ByRange @inputUnion): MessagesResult! @goField(forceResolver: true) @isAuth
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query/query_rooms.graphql", Input: `extend type Query {
     rooms(find: FindRooms! @inputLeastOne, params: Params): RoomsResult! @goField(forceResolver: true) @isAuth
@@ -1538,42 +1549,58 @@ func (ec *executionContext) field_Query_messages_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Query_roomMessages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["roomID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
-		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+	var arg0 *model.ByCreated
+	if tmp, ok := rawArgs["byCreated"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("byCreated"))
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalOByCreated2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐByCreated(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.InputUnion == nil {
+				return nil, errors.New("directive inputUnion is not implemented")
+			}
+			return ec.directives.InputUnion(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if data, ok := tmp.(*model.ByCreated); ok {
+			arg0 = data
+		} else if tmp == nil {
+			arg0 = nil
+		} else {
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be *github.com/saime-0/messenger-for-employee/graph/model.ByCreated`, tmp))
 		}
 	}
-	args["roomID"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["startMsg"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startMsg"))
-		arg1, err = ec.unmarshalNID2int(ctx, tmp)
+	args["byCreated"] = arg0
+	var arg1 *model.ByRange
+	if tmp, ok := rawArgs["byRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("byRange"))
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalOByRange2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐByRange(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.InputUnion == nil {
+				return nil, errors.New("directive inputUnion is not implemented")
+			}
+			return ec.directives.InputUnion(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if data, ok := tmp.(*model.ByRange); ok {
+			arg1 = data
+		} else if tmp == nil {
+			arg1 = nil
+		} else {
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be *github.com/saime-0/messenger-for-employee/graph/model.ByRange`, tmp))
 		}
 	}
-	args["startMsg"] = arg1
-	var arg2 model.MsgCreated
-	if tmp, ok := rawArgs["created"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("created"))
-		arg2, err = ec.unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["created"] = arg2
-	var arg3 int
-	if tmp, ok := rawArgs["count"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
-		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["count"] = arg3
+	args["byRange"] = arg1
 	return args, nil
 }
 
@@ -3794,7 +3821,7 @@ func (ec *executionContext) _Query_roomMessages(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().RoomMessages(rctx, args["roomID"].(int), args["startMsg"].(int), args["created"].(model.MsgCreated), args["count"].(int))
+			return ec.resolvers.Query().RoomMessages(rctx, args["byCreated"].(*model.ByCreated), args["byRange"].(*model.ByRange))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5851,6 +5878,92 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
+
+func (ec *executionContext) unmarshalInputByCreated(ctx context.Context, obj interface{}) (model.ByCreated, error) {
+	var it model.ByCreated
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "roomID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+			it.RoomID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "startMsg":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startMsg"))
+			it.StartMsg, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "created":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("created"))
+			it.Created, err = ec.unmarshalNMsgCreated2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐMsgCreated(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "count":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			it.Count, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputByRange(ctx context.Context, obj interface{}) (model.ByRange, error) {
+	var it model.ByRange
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "roomID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+			it.RoomID, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "start":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
+			it.Start, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "end":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
+			it.End, err = ec.unmarshalNID2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
 
 func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context, obj interface{}) (model.CreateMessageInput, error) {
 	var it model.CreateMessageInput
@@ -9377,6 +9490,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOByCreated2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐByCreated(ctx context.Context, v interface{}) (*model.ByCreated, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputByCreated(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOByRange2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐByRange(ctx context.Context, v interface{}) (*model.ByRange, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputByRange(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v interface{}) (*int, error) {

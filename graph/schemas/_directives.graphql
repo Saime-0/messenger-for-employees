@@ -6,8 +6,7 @@ directive @goField(
 directive @isAuth on INPUT_FIELD_DEFINITION
     | FIELD_DEFINITION | SUBSCRIPTION
 
-directive @inputUnion on INPUT_FIELD_DEFINITION
-    | ARGUMENT_DEFINITION
+directive @inputUnion on ARGUMENT_DEFINITION
 
 directive @inputLeastOne on INPUT_FIELD_DEFINITION
     | ARGUMENT_DEFINITION | INPUT_OBJECT

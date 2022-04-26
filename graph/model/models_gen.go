@@ -83,6 +83,19 @@ func (AdvancedError) IsMoveRoomResult()                  {}
 func (AdvancedError) IsMessagesResult()                  {}
 func (AdvancedError) IsEditListenEventCollectionResult() {}
 
+type ByCreated struct {
+	RoomID   int        `json:"roomID"`
+	StartMsg int        `json:"startMsg"`
+	Created  MsgCreated `json:"created"`
+	Count    int        `json:"count"`
+}
+
+type ByRange struct {
+	RoomID int `json:"roomID"`
+	Start  int `json:"start"`
+	End    int `json:"end"`
+}
+
 type CreateMessageInput struct {
 	RoomID      int    `json:"roomID"`
 	TargetMsgID *int   `json:"targetMsgID"`

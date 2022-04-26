@@ -42,6 +42,18 @@ input FindRooms {
     name: String
 }
 
+input ByCreated {
+    roomID: ID!
+    startMsg: ID!
+    created: MsgCreated!
+    count: Int!
+}
+input ByRange {
+    roomID: ID!
+    start: ID!
+    end: ID!
+}
+
 
 
 

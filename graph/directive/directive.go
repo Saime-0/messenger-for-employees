@@ -6,7 +6,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 	"github.com/saime-0/messenger-for-employee/internal/utils"
-	"reflect"
 )
 
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
@@ -20,29 +19,29 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 }
 
 func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	v := reflect.ValueOf(obj)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	input, ok := obj.(map[string]interface{})
+	if !ok {
+		panic("InputUnion: can not convert external map")
 	}
 
 	valueFound := false
-
-	for i := 0; i < v.NumField(); i++ {
-		if !v.Field(i).IsNil() {
+	for _, val := range input {
+		if val != nil {
 			if valueFound {
-				return obj, cerrors.New("only one field of the input union should have a value")
+				goto handleError
 			}
-
 			valueFound = true
 		}
 	}
 
 	if !valueFound {
-		return obj, cerrors.New("one of the input union fields must have a value")
+		goto handleError
 	}
 
 	return next(ctx)
 
+handleError:
+	return obj, cerrors.New("one of the input union fields must have a value")
 }
 
 func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
@@ -52,15 +51,15 @@ func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) 
 		panic("InputLeastOne: can not convert external map")
 	}
 
-	finded := false
+	fieldFindIsExists := false
 	for key, val := range input {
 		if key == "find" || key == "input" {
-			finded = true
+			fieldFindIsExists = true
 			input = val.(map[string]interface{})
 			break
 		}
 	}
-	if !finded {
+	if !fieldFindIsExists {
 		panic("InputLeastOne: union input field not found")
 	}
 

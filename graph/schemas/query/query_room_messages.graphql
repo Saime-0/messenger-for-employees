@@ -1,3 +1,3 @@
 extend type Query {
-    roomMessages(roomID: ID! startMsg: ID! created: MsgCreated! count: Int!): MessagesResult! @goField(forceResolver: true) @isAuth
+    roomMessages(byCreated:ByCreated @inputUnion, byRange:ByRange @inputUnion): MessagesResult! @goField(forceResolver: true) @isAuth
 }

@@ -357,14 +357,55 @@ func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage,
 	return message, err
 }
 
-func (r *RoomsRepo) RoomMessages(roomID int, startMsg int, created model.MsgCreated, count int) (*model.Messages, error) {
+func (r *RoomsRepo) RoomMessagesByRange(byRange *model.ByRange, limit int) (*model.Messages, error) {
+	messages := &model.Messages{
+		Messages: []*model.Message{},
+	}
+	// start must less than end
+	if byRange.Start > byRange.End {
+		byRange.Start, byRange.End = byRange.End, byRange.Start
+	}
+	var rows, err = r.db.Query(`
+		SELECT room_id, msg_id, emp_id, target_id, body, created_at, prev, next
+		FROM messages
+		WHERE room_id = $1 AND msg_id >= $2 AND msg_id <= $3
+		limit $4
+	`,
+		byRange.RoomID,
+		byRange.Start,
+		byRange.End,
+		limit,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		m := &model.Message{Room: new(model.Room), Employee: new(model.Employee)}
+		var targetID *int
+
+		if err = rows.Scan(&m.Room.RoomID, &m.MsgID, &m.Employee.EmpID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
+			return nil, err
+		}
+		if targetID != nil {
+			m.TargetMsg = &model.Message{MsgID: *targetID, Room: &model.Room{RoomID: m.Room.RoomID}}
+		}
+
+		messages.Messages = append(messages.Messages, m)
+	}
+
+	return messages, nil
+}
+
+func (r *RoomsRepo) RoomMessagesByCreated(byCreated *model.ByCreated) (*model.Messages, error) {
 	messages := &model.Messages{
 		Messages: []*model.Message{},
 	}
 	// lessToGreat = true if created == after
 	// lessToGreat = false if created == before
 	lessToGreat := true
-	if created == model.MsgCreatedBefore {
+	if byCreated.Created == model.MsgCreatedBefore {
 		lessToGreat = false
 	}
 	var rows, err = r.db.Query(`
@@ -381,10 +422,10 @@ func (r *RoomsRepo) RoomMessages(roomID int, startMsg int, created model.MsgCrea
                  case when not $3 then msg_id end desc
 		limit $4
 	`,
-		roomID,
-		startMsg,
+		byCreated.RoomID,
+		byCreated.StartMsg,
 		lessToGreat,
-		count,
+		byCreated.Count,
 	)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
