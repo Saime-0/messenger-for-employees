@@ -109,7 +109,6 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 
 	room, err := r.Dataloader.Room(clientID, obj.Room.RoomID)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
