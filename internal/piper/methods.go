@@ -168,7 +168,6 @@ func (n Node) IsMember(employeeID, roomID int) (fail bool) {
 
 	isMember, err := n.Dataloader.EmployeeIsRoomMember(employeeID, roomID)
 	if err != nil {
-
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true

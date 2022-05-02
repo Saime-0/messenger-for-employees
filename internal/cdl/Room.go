@@ -46,8 +46,8 @@ func (c *parentCategory) room() {
 		empIDs = append(empIDs, query.Inp.(*roomInp).EmpID)
 		roomIDs = append(roomIDs, query.Inp.(*roomInp).RoomID)
 	}
-	// todo fix
-	rows, err := c.Dataloader.db.Query(`  
+
+	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr,
 				coalesce(r.room_id, 0),
 				coalesce(r.name, ''),
@@ -71,7 +71,7 @@ func (c *parentCategory) room() {
 	}
 	defer rows.Close()
 
-	var ( // каждую итерацию будем менять значения
+	var ( // Каждую итерацию будем менять значения
 		ptr chanPtr
 	)
 	for rows.Next() {

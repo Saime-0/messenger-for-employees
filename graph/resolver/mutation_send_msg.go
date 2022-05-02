@@ -57,7 +57,6 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 	}(node)
 
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}

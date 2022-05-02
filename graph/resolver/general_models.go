@@ -24,7 +24,6 @@ func (r *employeeResolver) Tags(ctx context.Context, obj *model.Employee) (*mode
 
 	rooms, err := r.Dataloader.Tags(obj.EmpID)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
@@ -127,7 +126,6 @@ func (r *messageResolver) Employee(ctx context.Context, obj *model.Message) (*mo
 
 	employee, err := r.Dataloader.Employee(obj.Employee.EmpID)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}

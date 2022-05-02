@@ -189,7 +189,7 @@ type Member struct {
 type MemberAction struct {
 	Action  Action `json:"action"`
 	EmpID   int    `json:"empID"`
-	RoomIDs []int  `json:"RoomIDs"`
+	RoomIDs []int  `json:"roomIDs"`
 }
 
 func (MemberAction) IsEventResult() {}
@@ -222,6 +222,7 @@ type NewMessage struct {
 	EmpID       int    `json:"empID"`
 	Body        string `json:"body"`
 	CreatedAt   int64  `json:"createdAt"`
+	Prev        *int   `json:"prev"`
 }
 
 func (NewMessage) IsEventResult() {}

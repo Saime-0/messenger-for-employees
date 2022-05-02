@@ -146,6 +146,7 @@ type ComplexityRoot struct {
 		CreatedAt   func(childComplexity int) int
 		EmpID       func(childComplexity int) int
 		MsgID       func(childComplexity int) int
+		Prev        func(childComplexity int) int
 		RoomID      func(childComplexity int) int
 		TargetMsgID func(childComplexity int) int
 	}
@@ -441,7 +442,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MemberAction.EmpID(childComplexity), true
 
-	case "MemberAction.RoomIDs":
+	case "MemberAction.roomIDs":
 		if e.complexity.MemberAction.RoomIDs == nil {
 			break
 		}
@@ -617,6 +618,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMessage.MsgID(childComplexity), true
+
+	case "NewMessage.prev":
+		if e.complexity.NewMessage.Prev == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.Prev(childComplexity), true
 
 	case "NewMessage.roomID":
 		if e.complexity.NewMessage.RoomID == nil {
@@ -1267,6 +1275,8 @@ type NewMessage {
 	empID: ID!
 	body: String!
 	createdAt: Int64!
+	prev: ID
+#	next: ID!
 }
 
 # Tags
@@ -1274,7 +1284,7 @@ type DropTag { tagID: ID! }
 type EmpTagAction { action: Action!, empID: ID!, tagIDs: [ID!]! }
 
 # Members
-type MemberAction { action: Action!, empID: ID!, RoomIDs: [ID!]! }
+type MemberAction { action: Action!, empID: ID!, roomIDs: [ID!]! }
 
 # Rooms
 type DropRoom { roomID: ID! }
@@ -2596,7 +2606,7 @@ func (ec *executionContext) _MemberAction_empID(ctx context.Context, field graph
 	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MemberAction_RoomIDs(ctx context.Context, field graphql.CollectedField, obj *model.MemberAction) (ret graphql.Marshaler) {
+func (ec *executionContext) _MemberAction_roomIDs(ctx context.Context, field graphql.CollectedField, obj *model.MemberAction) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3509,6 +3519,38 @@ func (ec *executionContext) _NewMessage_createdAt(ctx context.Context, field gra
 	res := resTmp.(int64)
 	fc.Result = res
 	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMessage_prev(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Prev, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PersonalData_email(ctx context.Context, field graphql.CollectedField, obj *model.PersonalData) (ret graphql.Marshaler) {
@@ -7067,9 +7109,9 @@ func (ec *executionContext) _MemberAction(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "RoomIDs":
+		case "roomIDs":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._MemberAction_RoomIDs(ctx, field, obj)
+				return ec._MemberAction_roomIDs(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -7429,6 +7471,13 @@ func (ec *executionContext) _NewMessage(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "prev":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._NewMessage_prev(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

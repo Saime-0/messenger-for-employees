@@ -339,7 +339,7 @@ func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage,
 		INSERT INTO messages (room_id, msg_id, emp_id,target_id, body)
 		SELECT $1, msg_count+1, $2, $3, $4
 		FROM msg_state WHERE room_id = $1
-		RETURNING msg_id, room_id, target_id, emp_id, body, created_at
+		RETURNING msg_id, room_id, target_id, emp_id, body, created_at, prev
 		`,
 		inp.RoomID,
 		inp.EmployeeID,
@@ -352,6 +352,7 @@ func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage,
 		&message.EmpID,
 		&message.Body,
 		&message.CreatedAt,
+		&message.Prev,
 	)
 
 	return message, err
@@ -427,10 +428,10 @@ func (r *RoomsRepo) RoomMessagesByCreated(byCreated *model.ByCreated) (*model.Me
 		lessToGreat,
 		byCreated.Count,
 	)
+	defer rows.Close()
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		m := &model.Message{Room: new(model.Room), Employee: new(model.Employee)}

@@ -18,7 +18,7 @@ func (r *queryResolver) RoomMessages(ctx context.Context, byCreated *model.ByCre
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("RoomMessagesByCreated", &bson.M{
+	node.SwitchMethod("RoomMessages", &bson.M{
 		"byCreated": byCreated,
 		"byRange":   byRange,
 	})
@@ -49,7 +49,6 @@ func (r *queryResolver) RoomMessages(ctx context.Context, byCreated *model.ByCre
 	}
 
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
