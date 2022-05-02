@@ -88,10 +88,10 @@ func (r *AuthRepo) OverflowDelete(employeeID, limit int) (err error) {
 
 func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, employeeID int, err error) {
 	err = r.db.QueryRow(`
-		SELECT 
+		SELECT
 		    coalesce(id,0), coalesce(emp_id,0)
-		FROM refresh_sessions
-		WHERE refresh_token = $1`,
+		from (select 1) as x
+		    left join refresh_sessions on refresh_token = $1`,
 		token,
 	).Scan(
 		&sessionId,

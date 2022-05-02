@@ -17,6 +17,8 @@ const (
 	MaxFirstNameLen = 32
 	MaxLastNameLen  = 32
 	MaxFullNameLen  = MaxFirstNameLen + MaxLastNameLen + 1 // 1 = space
+
+	MaxMessageBodyLen = 1024
 )
 
 type AdvancedError struct {

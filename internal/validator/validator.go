@@ -3,6 +3,7 @@ package validator
 import (
 	"github.com/saime-0/messenger-for-employee/internal/rules"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -66,4 +67,17 @@ func ValidateIDs(ids []int) (valid bool) {
 
 func ValidateSessionKey(sessionKey string) (valid bool) {
 	return expSessionKey.MatchString(sessionKey)
+}
+
+func ValidateMessageBody(body *string) (valid bool, reason string) {
+	switch {
+	case body == nil:
+		return false, "ошибка произошла там где ее никто не ждал"
+	case len(*body) < 1:
+		return false, "нельзя отправлять пустое сообщение"
+	case len(*body) > rules.MaxMessageBodyLen:
+		return false, "превышен лимит символов, макс. длина:" + strconv.Itoa(rules.MaxMessageBodyLen)
+	default:
+		return true, ""
+	}
 }

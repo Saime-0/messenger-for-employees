@@ -274,6 +274,19 @@ func (n Node) ValidSessionKey(sessionKey string) (fail bool) {
 	return
 }
 
+func (n Node) ValidMessageBody(body *string) (fail bool) {
+	n.SwitchMethod("ValidMessageBody", &bson.M{
+		"body": body,
+	})
+	defer n.MethodTiming()
+
+	if ok, reason := validator.ValidateMessageBody(body); !ok {
+		n.SetError(resp.ErrBadRequest, reason)
+		return true
+	}
+	return
+}
+
 func (n Node) ValidEmail(email string) (fail bool) {
 	n.SwitchMethod("ValidateEmail", &bson.M{
 		"email": email,

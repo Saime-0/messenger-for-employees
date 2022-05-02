@@ -29,7 +29,6 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 
 	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}

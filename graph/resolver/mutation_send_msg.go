@@ -29,9 +29,12 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 		clientID = utils.GetAuthDataFromCtx(ctx).EmployeeID
 	)
 
+	input.Body = *utils.ClearMessageBodyOfExtraCharacters(&input.Body) // must
+
 	if node.RoomExists(input.RoomID) ||
 		node.IsMember(clientID, input.RoomID) ||
-		input.TargetMsgID != nil && node.MessageExists(input.RoomID, *input.TargetMsgID) {
+		input.TargetMsgID != nil && node.MessageExists(input.RoomID, *input.TargetMsgID) ||
+		node.ValidMessageBody(&input.Body) {
 		return node.GetError(), nil
 	}
 
