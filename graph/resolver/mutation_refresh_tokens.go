@@ -61,7 +61,6 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		r.Config.SecretSigningKey,
 	)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
@@ -69,8 +68,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	if sessionKey != nil {
 		err = r.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
 		if err != nil {
-
-			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
+			node.Healer.Debug(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		}
 	}
 

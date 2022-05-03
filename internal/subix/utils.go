@@ -2,8 +2,6 @@ package subix
 
 import (
 	"github.com/saime-0/messenger-for-employee/graph/model"
-	"github.com/saime-0/messenger-for-employee/internal/utils"
-	"log"
 )
 
 func (s *Subix) writeToRoom(ignoreEventCollection bool, body model.EventResult, roomIDs ...int) {
@@ -82,7 +80,7 @@ func (s *Subix) writeToClientsWithEvents(ignoreEventCollection bool, clientsWith
 }
 
 func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
-	log.Printf("%s client: %#v", utils.GetCallerPos(), client) // debug
+	//log.Printf("%s client: %#v", utils.GetCallerPos(), client) // debug
 	if (*client).marked {
 		return
 	}

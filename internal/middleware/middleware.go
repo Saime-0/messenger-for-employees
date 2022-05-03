@@ -31,8 +31,8 @@ func ChainShip(cfg *config.Config2, hlr *healer.Healer) func(http.Handler) http.
 				cfg: cfg,
 				hlr: hlr,
 			}
-
-			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
+			//kit.PrettyPrint(r.Header)
+			if r.Header.Get("Sec-Websocket-Protocol") == "" {
 				c.checkAuth().getUserAgent()
 			} else {
 				c.hlr.Debug("connection switched to websocket!")

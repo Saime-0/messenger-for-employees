@@ -14,6 +14,7 @@ import (
 )
 
 func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string) (<-chan *model.SubscriptionBody, error) {
+
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -21,6 +22,10 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 		"sessionKey": sessionKey,
 	})
 	defer node.MethodTiming()
+
+	node.Debug(&bson.M{
+		"sessionKey": sessionKey,
+	})
 
 	var (
 		authData = utils.GetAuthDataFromCtx(ctx)
@@ -32,6 +37,7 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 	}
 
 	if node.ValidSessionKey(sessionKey) {
+		node.Debug(cerrors.Wrap(cerrors.New(node.GetError().Error), utils.GetCallerPos()+""))
 		return nil, cerrors.New(node.GetError().Error)
 	}
 
@@ -41,6 +47,7 @@ func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string)
 		authData.ExpiresAt,
 	)
 	if err != nil {
+		node.Debug(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, err
 	}
 
