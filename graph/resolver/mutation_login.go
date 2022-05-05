@@ -41,8 +41,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		}
 	)
 
-	if node.UserExistsByRequisites(requisites) ||
-		node.GetEmployeeIDByRequisites(requisites, &clientID) {
+	if node.GetEmployeeIDByRequisites(requisites, &clientID) {
 		return node.GetError(), nil
 	}
 

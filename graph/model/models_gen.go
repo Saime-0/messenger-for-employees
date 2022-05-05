@@ -219,7 +219,7 @@ type NewMessage struct {
 	MsgID       int    `json:"msgID"`
 	RoomID      int    `json:"roomID"`
 	TargetMsgID *int   `json:"targetMsgID"`
-	EmpID       int    `json:"empID"`
+	EmployeeID  *int   `json:"employeeID"`
 	Body        string `json:"body"`
 	CreatedAt   int64  `json:"createdAt"`
 	Prev        *int   `json:"prev"`
@@ -243,8 +243,8 @@ type Room struct {
 	Name            string   `json:"name"`
 	View            RoomType `json:"view"`
 	PrevRoomID      *int     `json:"prevRoomID"`
-	LastMessageRead int      `json:"lastMessageRead"`
-	LastMessageID   int      `json:"lastMessageID"`
+	LastMessageRead *int     `json:"lastMessageRead"`
+	LastMessageID   *int     `json:"lastMessageID"`
 	Members         *Members `json:"members"`
 }
 

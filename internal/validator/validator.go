@@ -9,14 +9,18 @@ import (
 
 var (
 	expEmail      = regexp.MustCompile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
-	expRoomName   = regexp.MustCompile(`^.{1,32}$`)
+	expRoomName   = regexp.MustCompile(`^.{1,64}$`)
 	expTagName    = regexp.MustCompile(`^.{1,32}$`)
 	expSessionKey = regexp.MustCompile(`^[a-zA-Z0-9\-=]{20}$`)
 	expPartOfName = regexp.MustCompile(`^([a-z]{2,16}|[а-я]{2,16})+$`)
 )
 
 func ValidateEmployeeFullName(fullName string) (valid bool) {
-	for i, partOfName := range strings.Split(strings.ToLower(fullName), " ") {
+	var names = strings.Split(strings.ToLower(fullName), " ")
+	if len(names) != 2 {
+		return false
+	}
+	for i, partOfName := range names {
 		if !expPartOfName.MatchString(partOfName) || i > 1 {
 			return false
 		}

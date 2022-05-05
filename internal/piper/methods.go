@@ -222,6 +222,7 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 	return
 }
 
+// deprecated
 func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) {
 	n.SwitchMethod("EmployeeExistsByRequisites", &bson.M{
 		"input": input,
@@ -236,7 +237,7 @@ func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) 
 		return true
 	}
 	if !exists {
-		n.SetError(resp.ErrBadRequest, "неверный логин или пароль ")
+		n.SetError(resp.ErrBadRequest, "неверный логин или пароль")
 		return true
 	}
 	return
@@ -251,9 +252,12 @@ func (n Node) GetEmployeeIDByRequisites(input *models.LoginRequisites, employeeI
 
 	_uid, err := n.repos.Employees.GetEmployeeIDByRequisites(input)
 	if err != nil {
-
 		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	if _uid == 0 {
+		n.SetError(resp.ErrBadRequest, "неверный логин или пароль")
 		return true
 	}
 	*employeeID = _uid

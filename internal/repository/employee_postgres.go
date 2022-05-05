@@ -24,14 +24,14 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		Personal: new(model.PersonalData),
 	}
 	err := r.db.QueryRow(`
-		SELECT coalesce(e.emp_id, 0),
+		SELECT coalesce(e.id, 0),
 		       coalesce(e.first_name,''),
 		       coalesce(e.last_name, ''),
 		       coalesce(e.email, ''),
 		       coalesce(e.phone_number, ''),
-		       coalesce(e.token, '')
+		       coalesce(e.password_hash, '')
 		FROM employees e
-		WHERE e.emp_id = $1`,
+		WHERE e.id = $1`,
 		empID,
 	).Scan(
 		&me.Employee.EmpID,
@@ -63,13 +63,13 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		}
 	}
 	rows, err := r.db.Query(`
-		SELECT e.emp_id, e.first_name, e.last_name
+		SELECT e.id, e.first_name, e.last_name
 		FROM employees e 
-		    LEFT JOIN positions p ON e.emp_id = p.emp_id 
-			LEFT JOIN members m ON m.emp_id = e.emp_id 
+		    LEFT JOIN positions p ON e.id = p.emp_id 
+			LEFT JOIN members m ON m.emp_id = e.id 
 		WHERE (
 		    $1::BIGINT IS NULL OR
-		    e.emp_id = $1::BIGINT
+		    e.id = $1::BIGINT
 		) AND (
 			$2::BIGINT IS NULL OR
 			m.room_id = $2::BIGINT
@@ -84,7 +84,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		    $5::VARCHAR = ' ' OR 
 		    e.first_name ILIKE $5::VARCHAR OR e.last_name ILIKE $5::VARCHAR
 		)
-		GROUP BY e.emp_id 
+		GROUP BY e.id 
 		`,
 		inp.EmpID,
 		inp.RoomID,
@@ -137,7 +137,7 @@ func (r *EmployeesRepo) EmployeeExistsByRequisites(inp *models.LoginRequisites) 
 		SELECT EXISTS(
 			SELECT 1
 			FROM employees
-			WHERE email = $1 AND token = $2
+			WHERE email = $1 AND password_hash = $2
 		)`,
 		inp.Email,
 		inp.HashedPasswd,
@@ -147,11 +147,14 @@ func (r *EmployeesRepo) EmployeeExistsByRequisites(inp *models.LoginRequisites) 
 
 }
 
+// returning id=0 if not found
 func (r *EmployeesRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (id int, err error) {
 	err = r.db.QueryRow(`
-		SELECT emp_id
-		FROM employees
-		WHERE email = $1 AND token = $2`,
+		SELECT coalesce((
+			SELECT id
+			FROM employees
+			WHERE email = $1 AND password_hash = $2
+		), 0)`,
 		inp.Email,
 		inp.HashedPasswd,
 	).Scan(&id)
@@ -161,9 +164,9 @@ func (r *EmployeesRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (
 
 func (r EmployeesRepo) CreateEmployee(emp *request_models.CreateEmployee) (empID int, err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO employees (first_name, last_name, email, phone_number, token, comment) 
+		INSERT INTO employees (first_name, last_name, email, phone_number, password_hash, comment) 
 		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING emp_id
+		RETURNING id
 	`,
 		emp.FirstName,
 		emp.LastName,
@@ -174,22 +177,3 @@ func (r EmployeesRepo) CreateEmployee(emp *request_models.CreateEmployee) (empID
 	).Scan(&empID)
 	return
 }
-
-//func (r EmployeesRepo) EmployeeExistsByFullName(fullName string) (exists bool, err error) {
-//	fullName = strings.ToLower(fullName)
-//	err = r.db.QueryRow(`
-//		SELECT EXISTS(
-//		    SELECT 1
-//		    FROM employees
-//		    WHERE
-//		)
-//	`,
-//		emp.FirstName,
-//		emp.LastName,
-//		emp.Email,
-//		emp.PhoneNumber,
-//		emp.Token,
-//		emp.Comment,
-//	).Scan(&empID)
-//	return
-//}

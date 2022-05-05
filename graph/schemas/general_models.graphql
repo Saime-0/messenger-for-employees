@@ -52,8 +52,8 @@ type Room {
     view: RoomType!
     # for the client
     prevRoomID: ID
-    lastMessageRead: ID!
-    lastMessageID: ID!
+    lastMessageRead: ID
+    lastMessageID: ID
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
@@ -81,7 +81,7 @@ type Message {
     msgID: ID!
     next: ID
     prev: ID
-    employee: Employee! @goField(forceResolver: true)
+    employee: Employee @goField(forceResolver: true)
     targetMsg: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!

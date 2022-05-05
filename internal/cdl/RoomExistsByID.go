@@ -18,7 +18,6 @@ type (
 )
 
 func (d *Dataloader) RoomExistsByID(roomID int) (bool, error) {
-	d.healer.Debug("Dataloader: новый запрос RoomExistsByID")
 	res := <-d.categories.RoomExistsByID.addBaseRequest(
 		&roomExistsByIDInp{
 			RoomID: roomID,
@@ -44,9 +43,9 @@ func (c *parentCategory) roomExistsByID() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, room_id is not null
+		SELECT ptr, r.id is not null
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, roomid)
-		LEFT JOIN rooms u ON u.room_id = inp.roomid
+		LEFT JOIN rooms r ON r.id = inp.roomid
 		`,
 		pq.Array(ptrs),
 		pq.Array(roomIDs),

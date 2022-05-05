@@ -19,7 +19,6 @@ type (
 )
 
 func (d *Dataloader) MessageExists(roomID, msgID int) (bool, error) {
-	d.healer.Debug("Dataloader: новый запрос MessageExists")
 	res := <-d.categories.MessageExists.addBaseRequest(
 		&messageExistsInp{
 			RoomID: roomID,
@@ -47,9 +46,9 @@ func (c *parentCategory) messageExists() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, msg_id is not null
+		SELECT ptr, m.id is not null
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, roomid, msgid)
-		LEFT JOIN messages m ON m.room_id = inp.roomid AND m.msg_id = inp.msgid
+		LEFT JOIN messages m ON m.room_id = inp.roomid AND m.id = inp.msgid
 		`,
 		pq.Array(ptrs),
 		pq.Array(roomIDs),

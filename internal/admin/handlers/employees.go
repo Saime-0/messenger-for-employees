@@ -10,6 +10,7 @@ import (
 	"github.com/saime-0/messenger-for-employee/internal/utils"
 	"github.com/saime-0/messenger-for-employee/internal/validator"
 	"net/http"
+	"strings"
 )
 
 func (h *AdminHandler) initEmployeesRoutes(r *mux.Router) {
@@ -29,10 +30,14 @@ func (h *AdminHandler) CreateEmployee(w http.ResponseWriter, r *http.Request) {
 	inp.Token, _ = utils.HashPassword(inp.Token, h.Resolver.Config.GlobalPasswordSalt)
 	fullName := fmt.Sprintf("%s %s", inp.FirstName, inp.LastName)
 
-	if !validator.ValidateEmployeeFullName(fmt.Sprintf("%s %s", inp.FirstName, inp.LastName)) {
+	if !validator.ValidateEmployeeFullName(fullName) {
 		responder.Error(w, http.StatusBadRequest, "invalid employee name")
 		return
 	}
+
+	inp.FirstName = strings.Title(strings.ToLower(inp.FirstName))
+	inp.LastName = strings.Title(strings.ToLower(inp.LastName))
+
 	emps, err := h.Resolver.Services.Repos.Employees.FindEmployees(&model.FindEmployees{
 		EmpID:  nil,
 		RoomID: nil,

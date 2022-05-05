@@ -11,7 +11,7 @@ type NewMessage {
 	msgID: ID!
 	roomID: ID!
 	targetMsgID: ID
-	empID: ID!
+	employeeID: ID
 	body: String!
 	createdAt: Int64!
 	prev: ID

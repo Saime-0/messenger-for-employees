@@ -14,7 +14,6 @@ import (
 )
 
 func (r *subscriptionResolver) Subscribe(ctx context.Context, sessionKey string) (<-chan *model.SubscriptionBody, error) {
-
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 

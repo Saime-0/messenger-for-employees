@@ -49,11 +49,11 @@ func (c *parentCategory) tags() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr,
-				coalesce(t.tag_id, 0),
+				coalesce(t.id, 0),
 				coalesce(t.name, '')
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, empid)
 		LEFT JOIN positions p on p.emp_id = inp.empid
-		LEFT JOIN tags t on t.tag_id = p.tag_id
+		LEFT JOIN tags t on t.id = p.tag_id
 		`,
 		pq.Array(ptrs),
 		pq.Array(empIDs),

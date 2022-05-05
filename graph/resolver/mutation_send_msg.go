@@ -68,7 +68,6 @@ func (r *mutationResolver) SendMsg(ctx context.Context, input model.CreateMessag
 			input.RoomID,
 		)
 		if err != nil {
-
 			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		}
 	}()

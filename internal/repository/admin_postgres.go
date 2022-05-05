@@ -19,7 +19,7 @@ func (r *AdminsRepo) AdminByToken(token string) (admin *models.Admin, err error)
 	admin = new(models.Admin)
 	err = r.db.QueryRow(`
 		SELECT 
-		       coalesce(admin_id, 0), 
+		       coalesce(id, 0),
 		       coalesce(email, ''), 
 		       coalesce(token, '')
 		FROM admins
@@ -38,9 +38,9 @@ func (r *AdminsRepo) AdminByToken(token string) (admin *models.Admin, err error)
 
 func (r *AdminsRepo) AdminByID(id int) (admin *models.Admin, err error) {
 	err = r.db.QueryRow(`
-		SELECT admin_id, email, token
+		SELECT id, email, token
 		FROM admins
-		WHERE admin_id = $1`,
+		WHERE id = $1`,
 		id,
 	).Scan(
 		&admin.ID,

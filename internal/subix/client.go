@@ -73,20 +73,11 @@ func (s *Subix) deleteClient(sessionKey Key) {
 		delete(s.clients, client.sessionKey)
 		s.sched.DropTask(&client.task)
 		select {
-		case x, ok := <-client.Ch:
-			if ok {
-				select {
-				case client.Ch <- x:
-				default:
-				}
-				log.Printf("закрываю канал у клиента  (его кто то читал)") // debug
-				close(client.Ch)
-			} else {
-				log.Printf("канал клиента не надо закрывать (он уже закрыт)") // debug
-			}
-		default:
-			log.Printf("закрываю канал у клиента  (его никто не читал)") // debug
+		case <-client.Ch:
+			log.Printf("закрываю канал у клиента empID = %d", client.EmployeeID) // debug
 			close(client.Ch)
+		default:
+			log.Printf("клиента empID = %d сам закрыл канал", client.EmployeeID) // debug
 		}
 
 		emp := s.employees[client.EmployeeID]

@@ -20,7 +20,7 @@ func NewTagsRepo(db *sql.DB) *TagsRepo {
 func (r *TagsRepo) CreateTag(tag *request_models.CreateTag) (tagID int, err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO tags (name) VALUES ($1)
-		RETURNING tag_id
+		RETURNING id
 	`,
 		tag.Name,
 	).Scan(&tagID)
@@ -44,7 +44,7 @@ func (r *TagsRepo) UpdateTag(tag *request_models.UpdateTag) (err error) {
 	err = r.db.QueryRow(`
 		UPDATE tags 
 		SET name = $2
-		WHERE tag_id = $1
+		WHERE id = $1
 	`,
 		tag.TagID,
 		tag.Name,
@@ -55,7 +55,7 @@ func (r *TagsRepo) UpdateTag(tag *request_models.UpdateTag) (err error) {
 func (r *TagsRepo) DropTag(tag *request_models.DropTag) (err error) {
 	err = r.db.QueryRow(`
 		DELETE FROM tags
-		WHERE tag_id = $1
+		WHERE id = $1
 	`,
 		tag.TagID,
 	).Err()
@@ -67,7 +67,7 @@ func (r *TagsRepo) TagExistsByID(tagID int) (exists bool, err error) {
 		SELECT EXISTS(
 		    SELECT 1
 		    FROm tags
-		    WHERE tag_id = $1
+		    WHERE id = $1
 		)
 	`,
 		tagID,
@@ -115,12 +115,12 @@ func (r *TagsRepo) Tags(tagIDs []int, params *model.Params) (*model.Tags, error)
 		allRows = true
 	}
 	var rows, err = r.db.Query(`
-		SELECT tag_id, name
+		SELECT id, name
 		FROM tags
 		WHERE (
 		    $1::BOOLEAN
 		    OR
-		    tag_id = ANY($2::BIGINT[])
+		    id = ANY($2::BIGINT[])
 		)
 		LIMIT $3
 		OFFSET $4

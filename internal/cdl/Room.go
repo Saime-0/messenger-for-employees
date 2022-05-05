@@ -49,15 +49,15 @@ func (c *parentCategory) room() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr,
-				coalesce(r.room_id, 0),
+				coalesce(r.id, 0),
 				coalesce(r.name, ''),
 				coalesce(r.view, 'TALK'),
-				coalesce(m.last_msg_read, 0),
-				coalesce(c.last_msg_id, 0 )
+				m.last_msg_read,
+				c.last_msg_id
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, empid, roomid)
 		LEFT JOIN members m 
 		    ON m.emp_id = inp.empid AND m.room_id = inp.roomid
-		LEFT JOIN rooms r ON r.room_id = m.room_id
+		LEFT JOIN rooms r ON r.id = m.room_id
 		LEFT JOIN msg_state c ON c.room_id = m.room_id
 		`,
 		pq.Array(ptrs),

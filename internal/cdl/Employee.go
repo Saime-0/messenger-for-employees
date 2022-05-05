@@ -45,11 +45,11 @@ func (c *parentCategory) user() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr, 
-		       coalesce(emp_id, 0),
+		       coalesce(id, 0),
 		       coalesce(first_name, ''),
 		       coalesce(last_name, '')
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, employeeid)
-		LEFT JOIN employees e ON e.emp_id = inp.employeeid
+		LEFT JOIN employees e ON e.id = inp.employeeid
 		`,
 		pq.Array(ptrs),
 		pq.Array(employeeIDs),

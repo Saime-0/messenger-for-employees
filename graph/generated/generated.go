@@ -144,7 +144,7 @@ type ComplexityRoot struct {
 	NewMessage struct {
 		Body        func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
-		EmpID       func(childComplexity int) int
+		EmployeeID  func(childComplexity int) int
 		MsgID       func(childComplexity int) int
 		Prev        func(childComplexity int) int
 		RoomID      func(childComplexity int) int
@@ -605,12 +605,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMessage.CreatedAt(childComplexity), true
 
-	case "NewMessage.empID":
-		if e.complexity.NewMessage.EmpID == nil {
+	case "NewMessage.employeeID":
+		if e.complexity.NewMessage.EmployeeID == nil {
 			break
 		}
 
-		return e.complexity.NewMessage.EmpID(childComplexity), true
+		return e.complexity.NewMessage.EmployeeID(childComplexity), true
 
 	case "NewMessage.msgID":
 		if e.complexity.NewMessage.MsgID == nil {
@@ -1011,8 +1011,8 @@ type Room {
     view: RoomType!
     # for the client
     prevRoomID: ID
-    lastMessageRead: ID!
-    lastMessageID: ID!
+    lastMessageRead: ID
+    lastMessageID: ID
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
@@ -1040,7 +1040,7 @@ type Message {
     msgID: ID!
     next: ID
     prev: ID
-    employee: Employee! @goField(forceResolver: true)
+    employee: Employee @goField(forceResolver: true)
     targetMsg: Message @goField(forceResolver: true)
     body: String!
     createdAt: Int64!
@@ -1272,7 +1272,7 @@ type NewMessage {
 	msgID: ID!
 	roomID: ID!
 	targetMsgID: ID
-	empID: ID!
+	employeeID: ID
 	body: String!
 	createdAt: Int64!
 	prev: ID
@@ -2835,14 +2835,11 @@ func (ec *executionContext) _Message_employee(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Employee)
 	fc.Result = res
-	return ec.marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, field.Selections, res)
+	return ec.marshalOEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_targetMsg(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -3416,7 +3413,7 @@ func (ec *executionContext) _NewMessage_targetMsgID(ctx context.Context, field g
 	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _NewMessage_empID(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
+func (ec *executionContext) _NewMessage_employeeID(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3434,21 +3431,18 @@ func (ec *executionContext) _NewMessage_empID(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EmpID, nil
+		return obj.EmployeeID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMessage_body(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
@@ -4256,14 +4250,11 @@ func (ec *executionContext) _Room_lastMessageRead(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_lastMessageID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -4291,14 +4282,11 @@ func (ec *executionContext) _Room_lastMessageID(ctx context.Context, field graph
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalNID2int(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_members(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -7225,9 +7213,6 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Message_employee(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -7441,16 +7426,13 @@ func (ec *executionContext) _NewMessage(ctx context.Context, sel ast.SelectionSe
 
 			out.Values[i] = innerFunc(ctx)
 
-		case "empID":
+		case "employeeID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._NewMessage_empID(ctx, field, obj)
+				return ec._NewMessage_employeeID(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "body":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._NewMessage_body(ctx, field, obj)
@@ -7776,9 +7758,6 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "lastMessageID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_lastMessageID(ctx, field, obj)
@@ -7786,9 +7765,6 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = innerFunc(ctx)
 
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "members":
 			field := field
 
@@ -9555,6 +9531,13 @@ func (ec *executionContext) unmarshalOByRange2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmess
 	}
 	res, err := ec.unmarshalInputByRange(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx context.Context, sel ast.SelectionSet, v *model.Employee) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Employee(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v interface{}) (*int, error) {

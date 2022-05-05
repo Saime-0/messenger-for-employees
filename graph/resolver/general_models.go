@@ -48,7 +48,6 @@ func (r *meResolver) Rooms(ctx context.Context, obj *model.Me, params model.Para
 
 	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID, &params)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("ошибка при попытке получить данные")
 	}
@@ -146,7 +145,7 @@ func (r *messageResolver) TargetMsg(ctx context.Context, obj *model.Message) (*m
 	})
 	defer node.MethodTiming()
 
-	message, err := r.Dataloader.Message(obj.TargetMsg.Room.RoomID, obj.TargetMsg.MsgID)
+	message, err := r.Dataloader.Message(obj.TargetMsg.MsgID)
 	if err != nil {
 
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
