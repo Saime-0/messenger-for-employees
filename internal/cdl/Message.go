@@ -53,8 +53,8 @@ func (c *parentCategory) message() {
 		       coalesce(m.created_at, 0),
 			   m.prev,
 			   m.next
-		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, roomid, messageid)
-		LEFT JOIN messages m ON m.id = inp.messageid AND m.room_id = inp.roomid
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, messageid)
+		LEFT JOIN messages m ON m.id = inp.messageid
 		`,
 		pq.Array(ptrs),
 		pq.Array(messageIDs),

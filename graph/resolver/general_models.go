@@ -147,7 +147,6 @@ func (r *messageResolver) TargetMsg(ctx context.Context, obj *model.Message) (*m
 
 	message, err := r.Dataloader.Message(obj.TargetMsg.MsgID)
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return nil, cerrors.New("произошла ошибка во время обработки данных")
 	}
