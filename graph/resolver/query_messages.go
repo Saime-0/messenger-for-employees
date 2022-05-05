@@ -28,8 +28,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 
 	if node.ValidParams(&params) ||
 		find.EmpID != nil && node.ValidID(*find.EmpID) ||
-		find.RoomID != nil && node.ValidID(*find.RoomID) ||
-		node.IsMember(clientID, *find.RoomID) ||
+		find.RoomID != nil && node.ValidID(*find.RoomID) && node.IsMember(clientID, *find.RoomID) ||
 		find.TargetID != nil && node.ValidID(*find.TargetID) ||
 		find.TextFragment != nil { // todo text valid
 		return node.GetError(), nil
