@@ -40,18 +40,19 @@ type Employees {
 type PersonalData {
     email: String!
     phoneNumber: String!
-    token: String!
+#    roomsOrder: [ID]!
 }
 enum MsgCreated {
     AFTER
     BEFORE
 }
 type Room {
+    pos: Int!
     roomID: ID!
     name: String!
     view: RoomType!
     # for the client
-    prevRoomID: ID
+#    prevRoomID: ID
     lastMessageRead: ID
     lastMessageID: ID
     members: Members! @goField(forceResolver: true)

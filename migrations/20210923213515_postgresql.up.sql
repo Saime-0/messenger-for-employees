@@ -240,10 +240,10 @@ BEGIN
 end;
 $$;
 
-create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint, prev_id bigint)
+create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, orderPos integer,  room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint)
     language plpgsql
 as $$
-declare emp_rooms text[][] = array[]::text[][]; -- {{ptrs}, {empids}, {seqs}}
+declare emp_rooms text[][] = array[]::text[][]; -- {{ptrs}, {empids}, {seqs}, {room_seq}}
 begin
     FOR i IN 1..array_length(ptrs, 1) LOOP
             emp_rooms[1] = array_append(emp_rooms[1]::text[], ptrs[i]::text);
@@ -254,15 +254,19 @@ begin
                            (select array_length(room_seq, 1) - coalesce(offsets[i], 0))]
                 FROM employees WHERE id = empIDs[i]
             )::text);
+            emp_rooms[4] = array_append(emp_rooms[4]::text[], (
+                SELECT room_seq
+                FROM employees WHERE id = empIDs[i]
+            )::text);
         END LOOP;
     return query SELECT inp.ptr,
+                        array_position(inp.room_seq::bigint[], r.id),
                         coalesce(r.id, 0),
                         coalesce(r.name, ''),
                         coalesce(r.view, 'TALK'),
                         m.last_msg_read,
-                        c.last_msg_id,
-                        m.prev_id
-                 FROM unnest(emp_rooms[1]::text[], emp_rooms[2]::bigint[], emp_rooms[3]::text[][]) inp(ptr, empid, seq)
+                        c.last_msg_id
+                 FROM unnest(emp_rooms[1]::text[], emp_rooms[2]::bigint[], emp_rooms[3]::text[][], emp_rooms[4]::text[][]) inp(ptr, empid, seq, room_seq)
                           LEFT JOIN members m ON m.emp_id = inp.empid
                           LEFT JOIN rooms r on r.id = m.room_id AND r.id = ANY (inp.seq::bigint[])
                           LEFT JOIN msg_state c on r.id = c.room_id;

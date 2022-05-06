@@ -46,6 +46,11 @@ func (r *meResolver) Rooms(ctx context.Context, obj *model.Me, params model.Para
 	})
 	defer node.MethodTiming()
 
+	var paramsPtr = &params
+	if node.ValidParams(&paramsPtr) {
+		return nil, cerrors.New(node.GetError().Error)
+	}
+
 	rooms, err := r.Dataloader.Rooms(obj.Employee.EmpID, &params)
 	if err != nil {
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))

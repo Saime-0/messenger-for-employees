@@ -44,9 +44,9 @@ func (c *parentCategory) message() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, 
-		       coalesce(m.room_id, 0), 
+		SELECT ptr,
 		       coalesce(m.id, 0), 
+		       coalesce(m.room_id, 0), 
 		       m.emp_id, 
 		       m.reply_id, 
 		       coalesce(m.body, ''), 
@@ -73,7 +73,7 @@ func (c *parentCategory) message() {
 	)
 	for rows.Next() {
 		m := &model.Message{Room: new(model.Room)}
-		if err = rows.Scan(&ptr, &m.Room.RoomID, &m.MsgID, &employeeID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
+		if err = rows.Scan(&ptr, &m.MsgID, &m.Room.RoomID, &employeeID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
 			//c.Dataloader.healer.Alert("message (scan rows):" + err.Desk())
 			c.Error = err
 			return

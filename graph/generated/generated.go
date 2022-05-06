@@ -154,7 +154,6 @@ type ComplexityRoot struct {
 	PersonalData struct {
 		Email       func(childComplexity int) int
 		PhoneNumber func(childComplexity int) int
-		Token       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -171,7 +170,7 @@ type ComplexityRoot struct {
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
 		Name            func(childComplexity int) int
-		PrevRoomID      func(childComplexity int) int
+		Pos             func(childComplexity int) int
 		RoomID          func(childComplexity int) int
 		View            func(childComplexity int) int
 	}
@@ -654,13 +653,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PersonalData.PhoneNumber(childComplexity), true
 
-	case "PersonalData.token":
-		if e.complexity.PersonalData.Token == nil {
-			break
-		}
-
-		return e.complexity.PersonalData.Token(childComplexity), true
-
 	case "Query.employees":
 		if e.complexity.Query.Employees == nil {
 			break
@@ -756,12 +748,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.Name(childComplexity), true
 
-	case "Room.prevRoomID":
-		if e.complexity.Room.PrevRoomID == nil {
+	case "Room.pos":
+		if e.complexity.Room.Pos == nil {
 			break
 		}
 
-		return e.complexity.Room.PrevRoomID(childComplexity), true
+		return e.complexity.Room.Pos(childComplexity), true
 
 	case "Room.roomID":
 		if e.complexity.Room.RoomID == nil {
@@ -999,18 +991,19 @@ type Employees {
 type PersonalData {
     email: String!
     phoneNumber: String!
-    token: String!
+#    roomsOrder: [ID]!
 }
 enum MsgCreated {
     AFTER
     BEFORE
 }
 type Room {
+    pos: Int!
     roomID: ID!
     name: String!
     view: RoomType!
     # for the client
-    prevRoomID: ID
+#    prevRoomID: ID
     lastMessageRead: ID
     lastMessageID: ID
     members: Members! @goField(forceResolver: true)
@@ -3617,41 +3610,6 @@ func (ec *executionContext) _PersonalData_phoneNumber(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PersonalData_token(ctx context.Context, field graphql.CollectedField, obj *model.PersonalData) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PersonalData",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Token, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_employees(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4088,6 +4046,41 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Room_pos(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pos, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Room_roomID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4191,38 +4184,6 @@ func (ec *executionContext) _Room_view(ctx context.Context, field graphql.Collec
 	res := resTmp.(model.RoomType)
 	fc.Result = res
 	return ec.marshalNRoomType2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐRoomType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Room_prevRoomID(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Room",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PrevRoomID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_lastMessageRead(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -7501,16 +7462,6 @@ func (ec *executionContext) _PersonalData(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "token":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._PersonalData_token(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7714,6 +7665,16 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Room")
+		case "pos":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Room_pos(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "roomID":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_roomID(ctx, field, obj)
@@ -7744,13 +7705,6 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "prevRoomID":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Room_prevRoomID(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
 		case "lastMessageRead":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_lastMessageRead(ctx, field, obj)

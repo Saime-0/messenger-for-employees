@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/saime-0/messenger-for-employee/graph/model"
 	"github.com/saime-0/messenger-for-employee/internal/admin/request_models"
+	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 	"github.com/saime-0/messenger-for-employee/internal/models"
 	"strings"
 )
@@ -28,8 +29,7 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		       coalesce(e.first_name,''),
 		       coalesce(e.last_name, ''),
 		       coalesce(e.email, ''),
-		       coalesce(e.phone_number, ''),
-		       coalesce(e.password_hash, '')
+		       coalesce(e.phone_number, '')
 		FROM employees e
 		WHERE e.id = $1`,
 		empID,
@@ -39,10 +39,9 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		&me.Employee.LastName,
 		&me.Personal.Email,
 		&me.Personal.PhoneNumber,
-		&me.Personal.Token,
 	)
 	if me.Employee.EmpID == 0 {
-		return nil, err
+		return nil, cerrors.New("user not found")
 	}
 
 	return me, err

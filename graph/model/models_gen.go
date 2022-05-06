@@ -235,14 +235,13 @@ type Params struct {
 type PersonalData struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phoneNumber"`
-	Token       string `json:"token"`
 }
 
 type Room struct {
+	Pos             int      `json:"pos"`
 	RoomID          int      `json:"roomID"`
 	Name            string   `json:"name"`
 	View            RoomType `json:"view"`
-	PrevRoomID      *int     `json:"prevRoomID"`
 	LastMessageRead *int     `json:"lastMessageRead"`
 	LastMessageID   *int     `json:"lastMessageID"`
 	Members         *Members `json:"members"`

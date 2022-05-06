@@ -27,18 +27,20 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.prev_id
+		SELECT array_position(e.room_seq, r.id), r.id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id
 		FROM rooms r
-		JOIN members m 
-		    ON m.room_id = r.id AND m.emp_id = $1 
-		JOIN msg_state c 
+	    JOIN employees e
+			ON e.id = $1
+		JOIN members m
+		    ON m.room_id = r.id AND m.emp_id = e.id
+		JOIN msg_state c
 		    ON r.id = c.room_id
 		WHERE (
-			    $2::BIGINT IS NULL 
-			    OR r.id = $2 
+			    $2::BIGINT IS NULL
+			    OR r.id = $2
 			)
 			AND (
-			    $3::VARCHAR IS NULL 
+			    $3::VARCHAR IS NULL
 			    OR lower(r.name) ILIKE lower($3)
 			)
 		LIMIT $6
@@ -57,7 +59,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.PrevRoomID); err != nil {
+		if err = rows.Scan(&m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
 			return nil, err
 		}
 
@@ -74,7 +76,7 @@ func (r *RoomsRepo) FindMessages(inp *model.FindMessages, params *model.Params) 
 	}
 
 	var rows, err = r.db.Query(`
-		SELECT m.room_id, m.id, m.emp_id, m.reply_id, m.body, m.created_at
+		SELECT m.id, room_id, emp_id, reply_id, body, created_at, prev, next
 		FROM messages m
 		WHERE (
 		    $1::BIGINT IS NULL 
@@ -299,7 +301,7 @@ func (r *RoomsRepo) RoomMessagesByRange(byRange *model.ByRange, limit int) (*mod
 		byRange.Start, byRange.End = byRange.End, byRange.Start
 	}
 	var rows, err = r.db.Query(`
-		SELECT room_id, id, emp_id, reply_id, body, created_at, prev, next
+		SELECT id, room_id, emp_id, reply_id, body, created_at, prev, next
 		FROM messages
 		WHERE room_id = $1 AND id >= $2 AND id <= $3
 		limit $4
@@ -325,7 +327,7 @@ func (r *RoomsRepo) RoomMessagesByCreated(byCreated *model.ByCreated) (*model.Me
 		lessToGreat = false
 	}
 	var rows, err = r.db.Query(`
-		SELECT room_id, id, emp_id, reply_id, body, created_at, prev, next
+		SELECT id, room_id, emp_id, reply_id, body, created_at, prev, next
 		FROM messages
 		WHERE room_id = $1 
 			AND (
@@ -356,13 +358,13 @@ func parseMessagesRows(rows *sql.Rows) (*model.Messages, error) {
 		Messages: []*model.Message{},
 	}
 	for rows.Next() {
-		m := &model.Message{Room: new(model.Room), Employee: new(model.Employee)}
+		m := &model.Message{Room: new(model.Room)}
 		var (
 			targetID   *int
 			employeeID *int
 		)
 
-		if err := rows.Scan(&m.Room.RoomID, &m.MsgID, &employeeID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
+		if err := rows.Scan(&m.MsgID, &m.Room.RoomID, &employeeID, &targetID, &m.Body, &m.CreatedAt, &m.Prev, &m.Next); err != nil {
 			return nil, err
 		}
 		if targetID != nil {

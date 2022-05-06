@@ -49,14 +49,17 @@ func (c *parentCategory) room() {
 
 	rows, err := c.Dataloader.db.Query(`
 		SELECT ptr,
+		       array_position(e.room_seq, r.id),
 				coalesce(r.id, 0),
 				coalesce(r.name, ''),
 				coalesce(r.view, 'TALK'),
 				m.last_msg_read,
 				c.last_msg_id
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, empid, roomid)
+		LEFT JOIN employees e
+		    ON e.id = inp.empid
 		LEFT JOIN members m 
-		    ON m.emp_id = inp.empid AND m.room_id = inp.roomid
+		    ON m.emp_id = e.id AND m.room_id = inp.roomid
 		LEFT JOIN rooms r ON r.id = m.room_id
 		LEFT JOIN msg_state c ON c.room_id = m.room_id
 		`,
@@ -76,7 +79,7 @@ func (c *parentCategory) room() {
 	)
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&ptr, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
 			//c.Dataloader.healer.Alert("room (scan rows):" + err.Desk())
 			c.Error = err
 			return
