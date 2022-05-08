@@ -108,12 +108,12 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 }
 
 func (r EmployeesRepo) DeleteRefreshSession(id int) error {
-	err := r.db.QueryRow(`
+	_, err := r.db.Exec(`
 		DELETE FROM refresh_sessions
 	    WHERE id = $1
-		`,
+	`,
 		id,
-	).Err()
+	)
 
 	return err
 }

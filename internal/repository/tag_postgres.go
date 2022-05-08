@@ -41,24 +41,24 @@ func (r *TagsRepo) TagExistsByName(name string) (exists bool, err error) {
 }
 
 func (r *TagsRepo) UpdateTag(tag *request_models.UpdateTag) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		UPDATE tags 
 		SET name = $2
 		WHERE id = $1
 	`,
 		tag.TagID,
 		tag.Name,
-	).Err()
+	)
 	return
 }
 
 func (r *TagsRepo) DropTag(tag *request_models.DropTag) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		DELETE FROM tags
 		WHERE id = $1
 	`,
 		tag.TagID,
-	).Err()
+	)
 	return
 }
 
@@ -76,7 +76,7 @@ func (r *TagsRepo) TagExistsByID(tagID int) (exists bool, err error) {
 }
 
 func (r *TagsRepo) GiveTag(tag *request_models.GiveTag) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		WITH "except"(tag_id) AS (
 		    SELECT tag_id
 		    FROM positions
@@ -89,18 +89,18 @@ func (r *TagsRepo) GiveTag(tag *request_models.GiveTag) (err error) {
 	`,
 		pq.Array(tag.TagIDs),
 		tag.EmpID,
-	).Err()
+	)
 	return
 }
 
 func (r *TagsRepo) TakeTag(tag *request_models.TakeTag) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		DELETE FROM positions
 		WHERE emp_id = $2 AND tag_id = $1
 	`,
 		tag.TagID,
 		tag.EmpID,
-	).Err()
+	)
 	return
 }
 

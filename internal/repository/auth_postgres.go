@@ -45,7 +45,7 @@ func (r *AuthRepo) CreateRefreshSession(employeeID int, sessionModel *models.Ref
 }
 
 func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.RefreshSession) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		UPDATE refresh_sessions
 		SET refresh_token = $2, expires_at = $3
 		WHERE id = $1
@@ -54,13 +54,13 @@ func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.Refr
 		sessionModel.RefreshToken,
 		//sessionModel.UserAgent,
 		sessionModel.ExpAt,
-	).Err()
+	)
 
 	return
 }
 
 func (r *AuthRepo) OverflowDelete(employeeID, limit int) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		DELETE FROM refresh_sessions 
 		WHERE id IN(                 
 		    WITH session_count AS (
@@ -78,7 +78,7 @@ func (r *AuthRepo) OverflowDelete(employeeID, limit int) (err error) {
 		    )`,
 		employeeID,
 		limit,
-	).Err()
+	)
 	if err != nil {
 		return cerrors.Wrap(err, "не удалось удалить лишние сессии")
 	}
