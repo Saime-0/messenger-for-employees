@@ -155,12 +155,12 @@ func (r RoomsRepo) CreateRoom(room *request_models.CreateRoom) (roomID int, err 
 }
 
 func (r RoomsRepo) DropRoom(room *request_models.DropRoom) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		DELETE FROM rooms
 		WHERE id = $1
 	`,
 		room.RoomID,
-	).Err()
+	)
 	return
 }
 
@@ -193,7 +193,7 @@ func (r RoomsRepo) EmployeesIsNotMember(roomID int, empIDs ...int) (empIsMember 
 }
 
 func (r RoomsRepo) AddEmployeeToRoom(inp *request_models.AddEmployeeToRooms) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 			WITH "except"(room_id) AS (
 			    SELECT room_id
 				FROM members
@@ -206,34 +206,34 @@ func (r RoomsRepo) AddEmployeeToRoom(inp *request_models.AddEmployeeToRooms) (er
 	`,
 		inp.EmpID,
 		pq.Array(inp.Rooms),
-	).Err()
+	)
 	return
 }
 
 func (r RoomsRepo) KickEmployeesFromRoom(inp *request_models.KickEmployeesFromRooms) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		DELETE FROM members
 		WHERE room_id = ANY($1) AND emp_id = ANY($2)
 	`,
 		pq.Array(inp.Rooms),
 		pq.Array(inp.Employees),
-	).Err()
+	)
 	return
 }
 
 func (r RoomsRepo) MoveRoom(empID, roomID int, prevRoomID *int) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		SELECT move_room_in_the_sequence($1, $2, $3)
 	`,
 		empID,
 		roomID,
 		prevRoomID,
-	).Err()
+	)
 	return
 }
 
 func (r RoomsRepo) ReadMessage(empID, roomID, msgID int) (err error) {
-	err = r.db.QueryRow(`
+	_, err = r.db.Exec(`
 		UPDATE members
 		SET last_msg_read = $3
 		WHERE emp_id = $1 AND room_id = $2 
@@ -245,7 +245,7 @@ func (r RoomsRepo) ReadMessage(empID, roomID, msgID int) (err error) {
 		empID,
 		roomID,
 		msgID,
-	).Err()
+	)
 	return
 }
 

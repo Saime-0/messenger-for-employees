@@ -16,6 +16,9 @@ func InitDB(cfg *config.Config2) (*sql.DB, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
+	// pq: sorry, too many clients already fix 0_0 maybe... and replace QueryRow().Err() -> Exec()
+	db.SetMaxIdleConns(0)
+	db.SetConnMaxIdleTime(0)
 	return db, nil
 
 }
