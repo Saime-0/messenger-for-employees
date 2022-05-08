@@ -33,9 +33,7 @@ func (r *mutationResolver) ReadMsg(ctx context.Context, roomID int, msgID int) (
 	}
 
 	err := r.Services.Repos.Rooms.ReadMessage(clientID, roomID, msgID)
-
 	if err != nil {
-
 		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()+""))
 		return resp.Error(resp.ErrInternalServerError, "не удалось прочитать сообщение"), nil
 	}

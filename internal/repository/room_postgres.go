@@ -236,7 +236,11 @@ func (r RoomsRepo) ReadMessage(empID, roomID, msgID int) (err error) {
 	err = r.db.QueryRow(`
 		UPDATE members
 		SET last_msg_read = $3
-		WHERE emp_id = $1 AND room_id = $2 AND last_msg_read < $3
+		WHERE emp_id = $1 AND room_id = $2 
+		  AND (
+		      members.last_msg_read IS NULL OR 
+		      last_msg_read < $3
+	      )
 	`,
 		empID,
 		roomID,
