@@ -51,7 +51,7 @@ input ByCreated {
 input ByRange {
     roomID: ID!
     start: ID!
-    end: ID!
+    inDirection: ID!
 }
 
 
