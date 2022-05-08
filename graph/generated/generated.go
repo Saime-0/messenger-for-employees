@@ -1111,7 +1111,7 @@ input ByCreated {
 input ByRange {
     roomID: ID!
     start: ID!
-    end: ID!
+    inDirection: ID!
 }
 
 
@@ -5942,11 +5942,11 @@ func (ec *executionContext) unmarshalInputByRange(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "end":
+		case "inDirection":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
-			it.End, err = ec.unmarshalNID2int(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inDirection"))
+			it.InDirection, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}

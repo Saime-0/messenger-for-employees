@@ -36,7 +36,7 @@ func (r *queryResolver) RoomMessages(ctx context.Context, byCreated *model.ByCre
 		node.ValidMsgCount(byCreated.Count)) ||
 		byRange != nil && (node.ValidID(byRange.RoomID) ||
 			node.IsMember(clientID, byRange.RoomID) ||
-			node.ValidID(byRange.Start) || node.ValidID(byRange.End)) {
+			node.ValidID(byRange.Start) || node.ValidID(byRange.InDirection)) {
 		return node.GetError(), nil
 	}
 

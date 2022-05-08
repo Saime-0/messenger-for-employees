@@ -91,9 +91,9 @@ type ByCreated struct {
 }
 
 type ByRange struct {
-	RoomID int `json:"roomID"`
-	Start  int `json:"start"`
-	End    int `json:"end"`
+	RoomID      int `json:"roomID"`
+	Start       int `json:"start"`
+	InDirection int `json:"inDirection"`
 }
 
 type CreateMessageInput struct {

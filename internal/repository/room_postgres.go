@@ -277,9 +277,16 @@ func (r RoomsRepo) RoomMembersID(roomID int) (employeeIDs []int, err error) {
 func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage, error) {
 	message := new(model.NewMessage)
 	err := r.db.QueryRow(`
-		INSERT INTO messages (room_id, emp_id, reply_id, body)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, room_id, reply_id, emp_id, body, created_at, prev
+		WITH send AS (
+			INSERT INTO messages (room_id, emp_id, reply_id, body)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id, room_id, reply_id, emp_id, body, created_at, prev
+		)
+		UPDATE members m
+		SET last_msg_read = s.id
+		FROM send s
+		WHERE m.emp_id = $2 AND m.room_id = $1
+		RETURNING s.id, s.room_id, s.reply_id, s.emp_id, s.body, s.created_at, s.prev
 		`,
 		inp.RoomID,
 		inp.EmployeeID,
@@ -300,19 +307,29 @@ func (r *RoomsRepo) CreateMessage(inp *models.CreateMessage) (*model.NewMessage,
 
 func (r *RoomsRepo) RoomMessagesByRange(byRange *model.ByRange, limit int) (*model.Messages, error) {
 
-	// start must less than end
-	if byRange.Start > byRange.End {
-		byRange.Start, byRange.End = byRange.End, byRange.Start
-	}
+	//// start must less than end // Nope
+	//if byRange.Start > byRange.InDirection {
+	//	byRange.Start, byRange.InDirection = byRange.InDirection, byRange.Start
+	//}
 	var rows, err = r.db.Query(`
+		with lessToGreat(val) as (
+		    VALUES ($2::BIGINT <= $3::BIGINT)
+		)
 		SELECT id, room_id, emp_id, reply_id, body, created_at, prev, next
-		FROM messages
-		WHERE room_id = $1 AND id >= $2 AND id <= $3
+		FROM lessToGreat, messages
+		WHERE room_id = $1 
+		  AND(
+		      lessToGreat.val = TRUE AND id >= $2 AND id <= $3
+		      OR id <= $2 AND id >= $3
+	      )
+		order by 
+			case when not lessToGreat.val then id end desc,
+			case when lessToGreat.val then id end asc
 		limit $4
 	`,
 		byRange.RoomID,
 		byRange.Start,
-		byRange.End,
+		byRange.InDirection,
 		limit,
 	)
 	if err != nil && err != sql.ErrNoRows {
