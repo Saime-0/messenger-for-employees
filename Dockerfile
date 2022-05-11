@@ -1,7 +1,6 @@
 FROM alpine:latest
 
 COPY ./ ./
-RUN chmod -R +x ./scripts
 
 # install packages
 RUN apk add --no-cache --update \

@@ -11,3 +11,11 @@ SMTP_EMAIL_LOGIN=example@exampe.ru
 SMTP_EMAIL_PASSWD=<password>
 
 ```
+
+Run
+
+```docker build -t messenger . ```
+
+```docker run -p 8080:8080 --env-file ./linux.env messenger```
+
+
