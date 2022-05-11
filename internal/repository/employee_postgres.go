@@ -22,7 +22,7 @@ func NewEmployeesRepo(db *sql.DB) *EmployeesRepo {
 func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 	me := &model.Me{
 		Employee: new(model.Employee),
-		Personal: new(model.PersonalData),
+		//Personal: new(model.PersonalData),
 	}
 	err := r.db.QueryRow(`
 		SELECT coalesce(e.id, 0),
@@ -37,8 +37,8 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		&me.Employee.EmpID,
 		&me.Employee.FirstName,
 		&me.Employee.LastName,
-		&me.Personal.Email,
-		&me.Personal.PhoneNumber,
+		&me.Employee.Email,
+		&me.Employee.PhoneNumber,
 	)
 	if me.Employee.EmpID == 0 {
 		return nil, cerrors.New("user not found")
@@ -62,7 +62,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		}
 	}
 	rows, err := r.db.Query(`
-		SELECT e.id, e.first_name, e.last_name
+		SELECT e.id, e.first_name, e.last_name, e.email, e.phone_number
 		FROM employees e 
 		    LEFT JOIN positions p ON e.id = p.emp_id 
 			LEFT JOIN members m ON m.emp_id = e.id 
@@ -98,7 +98,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 	defer rows.Close()
 	for rows.Next() {
 		m := new(model.Employee)
-		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName); err != nil {
+		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName, &m.Email, &m.PhoneNumber); err != nil {
 			return nil, err
 		}
 		users.Employees = append(users.Employees, m)

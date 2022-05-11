@@ -22,7 +22,7 @@ func (n Node) ValidParams(params **model.Params) (fail bool) {
 
 	if *params == nil {
 		*params = &model.Params{
-			Limit:  kit.IntPtr(rules.MaxLimit), // ! unsafe
+			Limit:  kit.IntPtr(rules.DefaultLimitValue), // ! unsafe
 			Offset: kit.IntPtr(0),
 		}
 		return
@@ -33,7 +33,7 @@ func (n Node) ValidParams(params **model.Params) (fail bool) {
 			return true
 		}
 	} else {
-		(*params).Limit = kit.IntPtr(rules.MaxLimit)
+		(*params).Limit = kit.IntPtr(rules.DefaultLimitValue)
 	}
 	if (*params).Offset != nil {
 		if !validator.ValidateOffset(*(*params).Offset) {

@@ -1,0 +1,4 @@
+extend type Mutation {
+    setNotify(roomID: ID!, value: Boolean!): SetNotifyResult! @goField(forceResolver: true) @isAuth
+}
+

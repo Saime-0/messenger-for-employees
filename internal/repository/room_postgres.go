@@ -27,7 +27,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	}
 
 	rows, err := r.db.Query(`
-		SELECT array_position(e.room_seq, r.id), r.id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id
+		SELECT array_position(e.room_seq, r.id), r.id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.notify
 		FROM rooms r
 	    JOIN employees e
 			ON e.id = $1
@@ -59,7 +59,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
 			return nil, err
 		}
 
@@ -177,6 +177,18 @@ func (r RoomsRepo) RoomExists(roomID int) (exists bool, err error) {
 	return
 }
 
+func (r RoomsRepo) EmployeeIsReceivesNotify(empID, roomID int) (enabled bool, err error) {
+	err = r.db.QueryRow(`
+	    SELECT notify
+	    FROm members
+	    WHERE emp_id = $1 AND room_id = $2
+	`,
+		empID,
+		roomID,
+	).Scan(&enabled)
+	return
+}
+
 func (r RoomsRepo) EmployeesIsNotMember(roomID int, empIDs ...int) (empIsMember int, err error) {
 	err = r.db.QueryRow(`
 		SELECT coalesce((
@@ -271,6 +283,19 @@ func (r RoomsRepo) RoomMembersID(roomID int) (employeeIDs []int, err error) {
 		employeeIDs = append(employeeIDs, empID)
 	}
 
+	return
+}
+
+func (r *RoomsRepo) SetNotify(empID int, roomID int, val bool) (err error) {
+	_, err = r.db.Exec(`
+		UPDATE members
+		SET notify = $3
+		WHERE emp_id = $1 AND room_id = $2
+	`,
+		empID,
+		roomID,
+		val,
+	)
 	return
 }
 

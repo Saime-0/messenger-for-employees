@@ -2,8 +2,8 @@ package rules
 
 const (
 	RefreshTokenLength = 28
-	MaxLimit           = 20
-	MaxMsgCount        = 20
+	DefaultLimitValue  = 50 // сделать методы в node Для каждого типа запроса и разделить валидацию и заполнение стандартными значениями
+	MaxMsgCount        = DefaultLimitValue
 	MinPasswordLength  = 6
 	MaxPasswordLength  = 32
 	//RefreshTokenLifetime          = int64(60 * 60 * 24 * 60) // 60 days

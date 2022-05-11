@@ -30,6 +30,10 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
+
+    email: String!
+    phoneNumber: String!
+
     # for the client
     tags: Tags! @goField(forceResolver: true)
 }
@@ -55,6 +59,7 @@ type Room {
 #    prevRoomID: ID
     lastMessageRead: ID
     lastMessageID: ID
+    notify: Boolean!
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
@@ -93,7 +98,7 @@ type Messages {
 
 type Me {
     employee: Employee!
-    personal: PersonalData!
+#    personal: PersonalData!
     rooms(params: Params!): Rooms! @goField(forceResolver: true)
 }
 

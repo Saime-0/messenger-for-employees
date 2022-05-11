@@ -21,7 +21,7 @@ func (s *Subix) NotifyRoomMembers(body model.EventResult, rooms ...ID) error {
 	return nil
 }
 
-// все учсастники(клиенты) получат ивент
+// все участники(клиенты) получат ивент
 func (s *Subix) NotifyAllRoomMembers(body model.EventResult, rooms ...ID) error {
 
 	s.writeToRoom(true, body, rooms...)

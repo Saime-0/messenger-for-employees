@@ -75,10 +75,12 @@ type ComplexityRoot struct {
 	}
 
 	Employee struct {
-		EmpID     func(childComplexity int) int
-		FirstName func(childComplexity int) int
-		LastName  func(childComplexity int) int
-		Tags      func(childComplexity int) int
+		Email       func(childComplexity int) int
+		EmpID       func(childComplexity int) int
+		FirstName   func(childComplexity int) int
+		LastName    func(childComplexity int) int
+		PhoneNumber func(childComplexity int) int
+		Tags        func(childComplexity int) int
 	}
 
 	Employees struct {
@@ -98,7 +100,6 @@ type ComplexityRoot struct {
 
 	Me struct {
 		Employee func(childComplexity int) int
-		Personal func(childComplexity int) int
 		Rooms    func(childComplexity int, params model.Params) int
 	}
 
@@ -139,6 +140,7 @@ type ComplexityRoot struct {
 		ReadMsg                   func(childComplexity int, roomID int, msgID int) int
 		RefreshTokens             func(childComplexity int, sessionKey *string, refreshToken string) int
 		SendMsg                   func(childComplexity int, input model.CreateMessageInput) int
+		SetNotify                 func(childComplexity int, roomID int, value bool) int
 	}
 
 	NewMessage struct {
@@ -170,6 +172,7 @@ type ComplexityRoot struct {
 		LastMessageRead func(childComplexity int) int
 		Members         func(childComplexity int) int
 		Name            func(childComplexity int) int
+		Notify          func(childComplexity int) int
 		Pos             func(childComplexity int) int
 		RoomID          func(childComplexity int) int
 		View            func(childComplexity int) int
@@ -236,6 +239,7 @@ type MutationResolver interface {
 	ReadMsg(ctx context.Context, roomID int, msgID int) (model.ReadMsgResult, error)
 	RefreshTokens(ctx context.Context, sessionKey *string, refreshToken string) (model.RefreshTokensResult, error)
 	SendMsg(ctx context.Context, input model.CreateMessageInput) (model.SendMsgResult, error)
+	SetNotify(ctx context.Context, roomID int, value bool) (model.SetNotifyResult, error)
 	EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetRooms []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error)
 }
 type QueryResolver interface {
@@ -317,6 +321,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EmpTagAction.TagIDs(childComplexity), true
 
+	case "Employee.email":
+		if e.complexity.Employee.Email == nil {
+			break
+		}
+
+		return e.complexity.Employee.Email(childComplexity), true
+
 	case "Employee.empID":
 		if e.complexity.Employee.EmpID == nil {
 			break
@@ -337,6 +348,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Employee.LastName(childComplexity), true
+
+	case "Employee.phoneNumber":
+		if e.complexity.Employee.PhoneNumber == nil {
+			break
+		}
+
+		return e.complexity.Employee.PhoneNumber(childComplexity), true
 
 	case "Employee.tags":
 		if e.complexity.Employee.Tags == nil {
@@ -393,13 +411,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Me.Employee(childComplexity), true
-
-	case "Me.personal":
-		if e.complexity.Me.Personal == nil {
-			break
-		}
-
-		return e.complexity.Me.Personal(childComplexity), true
 
 	case "Me.rooms":
 		if e.complexity.Me.Rooms == nil {
@@ -590,6 +601,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SendMsg(childComplexity, args["input"].(model.CreateMessageInput)), true
 
+	case "Mutation.setNotify":
+		if e.complexity.Mutation.SetNotify == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setNotify_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetNotify(childComplexity, args["roomID"].(int), args["value"].(bool)), true
+
 	case "NewMessage.body":
 		if e.complexity.NewMessage.Body == nil {
 			break
@@ -747,6 +770,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Name(childComplexity), true
+
+	case "Room.notify":
+		if e.complexity.Room.Notify == nil {
+			break
+		}
+
+		return e.complexity.Room.Notify(childComplexity), true
 
 	case "Room.pos":
 		if e.complexity.Room.Pos == nil {
@@ -981,6 +1011,10 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
+
+    email: String!
+    phoneNumber: String!
+
     # for the client
     tags: Tags! @goField(forceResolver: true)
 }
@@ -1006,6 +1040,7 @@ type Room {
 #    prevRoomID: ID
     lastMessageRead: ID
     lastMessageID: ID
+    notify: Boolean!
     members: Members! @goField(forceResolver: true)
 }
 type Rooms {
@@ -1044,7 +1079,7 @@ type Messages {
 
 type Me {
     employee: Employee!
-    personal: PersonalData!
+#    personal: PersonalData!
     rooms(params: Params!): Rooms! @goField(forceResolver: true)
 }
 
@@ -1140,6 +1175,11 @@ input ByRange {
 }
 
 `, BuiltIn: false},
+	{Name: "graph/schemas/mutation/mutation_set_notify.graphql", Input: `extend type Mutation {
+    setNotify(roomID: ID!, value: Boolean!): SetNotifyResult! @goField(forceResolver: true) @isAuth
+}
+
+`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation`, BuiltIn: false},
 	{Name: "graph/schemas/query/query_employees.graphql", Input: `extend type Query {
     employees(find: FindEmployees! @inputLeastOne, params: Params): EmployeesResult! @goField(forceResolver: true) @isAuth
@@ -1201,6 +1241,10 @@ union RegisterResult =
     | Successful
 
 union SendMsgResult =
+    | AdvancedError
+    | Successful
+
+union SetNotifyResult =
     | AdvancedError
     | Successful
 
@@ -1453,6 +1497,30 @@ func (ec *executionContext) field_Mutation_sendMsg_args(ctx context.Context, raw
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setNotify_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["value"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["value"] = arg1
 	return args, nil
 }
 
@@ -2102,6 +2170,76 @@ func (ec *executionContext) _Employee_lastName(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Employee_email(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Employee",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Employee_phoneNumber(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Employee",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PhoneNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Employee_tags(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2380,41 +2518,6 @@ func (ec *executionContext) _Me_employee(ctx context.Context, field graphql.Coll
 	res := resTmp.(*model.Employee)
 	fc.Result = res
 	return ec.marshalNEmployee2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐEmployee(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Me_personal(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Me",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Personal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.PersonalData)
-	fc.Result = res
-	return ec.marshalNPersonalData2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐPersonalData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Me_rooms(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
@@ -3240,6 +3343,68 @@ func (ec *executionContext) _Mutation_sendMsg(ctx context.Context, field graphql
 	res := resTmp.(model.SendMsgResult)
 	fc.Result = res
 	return ec.marshalNSendMsgResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐSendMsgResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_setNotify(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_setNotify_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SetNotify(rctx, args["roomID"].(int), args["value"].(bool))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuth == nil {
+				return nil, errors.New("directive isAuth is not implemented")
+			}
+			return ec.directives.IsAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.SetNotifyResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/messenger-for-employee/graph/model.SetNotifyResult`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.SetNotifyResult)
+	fc.Result = res
+	return ec.marshalNSetNotifyResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐSetNotifyResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_editListenEventCollection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4248,6 +4413,41 @@ func (ec *executionContext) _Room_lastMessageID(ctx context.Context, field graph
 	res := resTmp.(*int)
 	fc.Result = res
 	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_notify(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notify, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_members(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -6521,6 +6721,29 @@ func (ec *executionContext) _SendMsgResult(ctx context.Context, sel ast.Selectio
 	}
 }
 
+func (ec *executionContext) _SetNotifyResult(ctx context.Context, sel ast.SelectionSet, obj model.SetNotifyResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _TagsResult(ctx context.Context, sel ast.SelectionSet, obj model.TagsResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -6548,7 +6771,7 @@ func (ec *executionContext) _TagsResult(ctx context.Context, sel ast.SelectionSe
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "MeResult", "RoomsResult", "TagsResult", "EmployeesResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMsgResult", "ReadMsgResult", "MoveRoomResult", "MessagesResult", "EditListenEventCollectionResult"}
+var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "MeResult", "RoomsResult", "TagsResult", "EmployeesResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMsgResult", "SetNotifyResult", "ReadMsgResult", "MoveRoomResult", "MessagesResult", "EditListenEventCollectionResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -6742,6 +6965,26 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "email":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Employee_email(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "phoneNumber":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Employee_phoneNumber(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "tags":
 			field := field
 
@@ -6919,16 +7162,6 @@ func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *
 		case "employee":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Me_employee(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "personal":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Me_personal(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -7329,6 +7562,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "setNotify":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setNotify(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "editListenEventCollection":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_editListenEventCollection(ctx, field)
@@ -7719,6 +7962,16 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 
 			out.Values[i] = innerFunc(ctx)
 
+		case "notify":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Room_notify(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "members":
 			field := field
 
@@ -7842,7 +8095,7 @@ func (ec *executionContext) _SubscriptionBody(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var successfulImplementors = []string{"Successful", "MutationResult", "RegisterResult", "SendMsgResult", "ReadMsgResult", "MoveRoomResult"}
+var successfulImplementors = []string{"Successful", "MutationResult", "RegisterResult", "SendMsgResult", "SetNotifyResult", "ReadMsgResult", "MoveRoomResult"}
 
 func (ec *executionContext) _Successful(ctx context.Context, sel ast.SelectionSet, obj *model.Successful) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, successfulImplementors)
@@ -8967,16 +9220,6 @@ func (ec *executionContext) unmarshalNParams2githubᚗcomᚋsaimeᚑ0ᚋmessenge
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPersonalData2ᚖgithubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐPersonalData(ctx context.Context, sel ast.SelectionSet, v *model.PersonalData) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PersonalData(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNReadMsgResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐReadMsgResult(ctx context.Context, sel ast.SelectionSet, v model.ReadMsgResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -9097,6 +9340,16 @@ func (ec *executionContext) marshalNSendMsgResult2githubᚗcomᚋsaimeᚑ0ᚋmes
 		return graphql.Null
 	}
 	return ec._SendMsgResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSetNotifyResult2githubᚗcomᚋsaimeᚑ0ᚋmessengerᚑforᚑemployeeᚋgraphᚋmodelᚐSetNotifyResult(ctx context.Context, sel ast.SelectionSet, v model.SetNotifyResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SetNotifyResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

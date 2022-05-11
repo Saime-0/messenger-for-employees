@@ -57,6 +57,7 @@ create table members (
                          emp_id bigint references employees on delete cascade,
                          room_id bigint references rooms on delete cascade,
                          last_msg_read bigint null references messages,
+                         notify bool default false,
                          prev_id bigint null references rooms
 );
 
@@ -240,7 +241,7 @@ BEGIN
 end;
 $$;
 
-create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, orderPos integer,  room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint)
+create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, orderPos integer,  room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint, notify bool)
     language plpgsql
 as $$
 declare emp_rooms text[][] = array[]::text[][]; -- {{ptrs}, {empids}, {seqs}, {room_seq}}
@@ -265,7 +266,8 @@ begin
                         coalesce(r.name, ''),
                         coalesce(r.view, 'TALK'),
                         m.last_msg_read,
-                        c.last_msg_id
+                        c.last_msg_id,
+                        m.notify
                  FROM unnest(emp_rooms[1]::text[], emp_rooms[2]::bigint[], emp_rooms[3]::text[][], emp_rooms[4]::text[][]) inp(ptr, empid, seq, room_seq)
                           LEFT JOIN members m ON m.emp_id = inp.empid
                           LEFT JOIN rooms r on r.id = m.room_id AND r.id = ANY (inp.seq::bigint[])

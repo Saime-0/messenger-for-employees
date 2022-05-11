@@ -30,6 +30,10 @@ union SendMsgResult =
     | AdvancedError
     | Successful
 
+union SetNotifyResult =
+    | AdvancedError
+    | Successful
+
 union ReadMsgResult =
     | AdvancedError
     | Successful

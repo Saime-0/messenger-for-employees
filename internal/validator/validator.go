@@ -53,7 +53,7 @@ func ValidateOffset(offset int) (valid bool) {
 }
 
 func ValidateLimit(limit int) (valid bool) {
-	return limit >= 1 && limit <= 20
+	return limit >= 1 && limit <= rules.DefaultLimitValue
 }
 
 func ValidateID(id int) (valid bool) {

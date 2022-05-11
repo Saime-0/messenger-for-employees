@@ -60,6 +60,10 @@ type SendMsgResult interface {
 	IsSendMsgResult()
 }
 
+type SetNotifyResult interface {
+	IsSetNotifyResult()
+}
+
 type TagsResult interface {
 	IsTagsResult()
 }
@@ -78,6 +82,7 @@ func (AdvancedError) IsLoginResult()                     {}
 func (AdvancedError) IsRefreshTokensResult()             {}
 func (AdvancedError) IsRegisterResult()                  {}
 func (AdvancedError) IsSendMsgResult()                   {}
+func (AdvancedError) IsSetNotifyResult()                 {}
 func (AdvancedError) IsReadMsgResult()                   {}
 func (AdvancedError) IsMoveRoomResult()                  {}
 func (AdvancedError) IsMessagesResult()                  {}
@@ -123,10 +128,12 @@ type EmpTagAction struct {
 func (EmpTagAction) IsEventResult() {}
 
 type Employee struct {
-	EmpID     int    `json:"empID"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Tags      *Tags  `json:"tags"`
+	EmpID       int    `json:"empID"`
+	FirstName   string `json:"firstName"`
+	LastName    string `json:"lastName"`
+	Email       string `json:"email"`
+	PhoneNumber string `json:"phoneNumber"`
+	Tags        *Tags  `json:"tags"`
 }
 
 type Employees struct {
@@ -174,9 +181,8 @@ type LoginInput struct {
 }
 
 type Me struct {
-	Employee *Employee     `json:"employee"`
-	Personal *PersonalData `json:"personal"`
-	Rooms    *Rooms        `json:"rooms"`
+	Employee *Employee `json:"employee"`
+	Rooms    *Rooms    `json:"rooms"`
 }
 
 func (Me) IsMeResult() {}
@@ -244,6 +250,7 @@ type Room struct {
 	View            RoomType `json:"view"`
 	LastMessageRead *int     `json:"lastMessageRead"`
 	LastMessageID   *int     `json:"lastMessageID"`
+	Notify          bool     `json:"notify"`
 	Members         *Members `json:"members"`
 }
 
@@ -262,11 +269,12 @@ type Successful struct {
 	Success string `json:"success"`
 }
 
-func (Successful) IsMutationResult() {}
-func (Successful) IsRegisterResult() {}
-func (Successful) IsSendMsgResult()  {}
-func (Successful) IsReadMsgResult()  {}
-func (Successful) IsMoveRoomResult() {}
+func (Successful) IsMutationResult()  {}
+func (Successful) IsRegisterResult()  {}
+func (Successful) IsSendMsgResult()   {}
+func (Successful) IsSetNotifyResult() {}
+func (Successful) IsReadMsgResult()   {}
+func (Successful) IsMoveRoomResult()  {}
 
 type Tag struct {
 	TagID int    `json:"tagID"`

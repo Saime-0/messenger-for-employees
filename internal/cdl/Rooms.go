@@ -54,7 +54,7 @@ func (c *parentCategory) rooms() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT ptr, orderpos, room_id, name, view, last_msg_read, last_msg_id 
+		SELECT ptr, orderpos, room_id, name, view, last_msg_read, last_msg_id, notify
 		FROM load_emp_rooms(
 	        $1::text[],
 		    $2::bigint[],
@@ -80,7 +80,7 @@ func (c *parentCategory) rooms() {
 	for rows.Next() {
 		m := new(model.Room)
 
-		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
 			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Desk())
 			c.Error = err
 			return

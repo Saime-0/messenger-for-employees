@@ -54,7 +54,8 @@ func (c *parentCategory) room() {
 				coalesce(r.name, ''),
 				coalesce(r.view, 'TALK'),
 				m.last_msg_read,
-				c.last_msg_id
+				c.last_msg_id,
+				m.notify
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, empid, roomid)
 		LEFT JOIN employees e
 		    ON e.id = inp.empid
@@ -79,7 +80,7 @@ func (c *parentCategory) room() {
 	)
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID); err != nil {
+		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
 			//c.Dataloader.healer.Alert("room (scan rows):" + err.Desk())
 			c.Error = err
 			return

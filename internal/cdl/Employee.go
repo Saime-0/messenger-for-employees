@@ -47,7 +47,9 @@ func (c *parentCategory) user() {
 		SELECT ptr, 
 		       coalesce(id, 0),
 		       coalesce(first_name, ''),
-		       coalesce(last_name, '')
+		       coalesce(last_name, ''),
+		       coalesce(email, ''),
+		       coalesce(phone_number, '')
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, employeeid)
 		LEFT JOIN employees e ON e.id = inp.employeeid
 		`,
@@ -66,7 +68,7 @@ func (c *parentCategory) user() {
 	)
 	for rows.Next() {
 		m := new(model.Employee)
-		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName); err != nil {
+		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName, &m.Email, &m.PhoneNumber); err != nil {
 			//c.Dataloader.healer.Alert("user (scan rows):" + err.Desk())
 			c.Error = err
 			return
