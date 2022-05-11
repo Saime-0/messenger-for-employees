@@ -1,6 +1,6 @@
 Create docker.env file in root directory and add following values:
 ```dotenv
-POSTGRES_CONNECTION=postgres://<user>:<password>@db:5432/chat_db?sslmode=disable
+POSTGRES_CONNECTION=postgres://<user>:<password>@db:5432/meem_db?sslmode=disable
 POSTGRES_PASSWORD=<password>
 POSTGRES_USER=<user>
 GLOBAL_PASSWORD_SALT=<random string>
