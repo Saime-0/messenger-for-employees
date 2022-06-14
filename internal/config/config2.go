@@ -31,9 +31,6 @@ func NewConfig2(pathToCfgFile string) (*Config2, error) {
 		GlobalPasswordSalt: os.Getenv("GLOBAL_PASSWORD_SALT"),
 		MongoDBUri:         os.Getenv("MONGODB_URI"),
 		SecretSigningKey:   os.Getenv("SECRET_SIGNING_KEY"),
-		SmtpHost:           os.Getenv("SMTP_HOST"),
-		SmtpEmailLogin:     os.Getenv("SMTP_EMAIL_LOGIN"),
-		SmtpEmailPasswd:    os.Getenv("SMTP_EMAIL_PASSWD"),
 	}
 
 	if !fromEnv.validate() {
@@ -50,9 +47,6 @@ type FromEnv struct {
 	GlobalPasswordSalt string // `toml:"global_password_salt"`
 	MongoDBUri         string // `toml:"mongodb_uri"`
 	SecretSigningKey   string // `toml:"secret_signing_key"`
-	SmtpHost           string // `toml:"smtp_host"`
-	SmtpEmailLogin     string // `toml:"smtp_email_login"`
-	SmtpEmailPasswd    string // `toml:"smtp_email_passwd"`
 }
 
 type FromCfgFile struct {
@@ -67,13 +61,7 @@ type FromCfgFile struct {
 	MaxCountOwnedChats                *int     `toml:"max_count_owned_chats" json:"max_count_owned_chats,omitempty"`
 	MaxMembersOnChat                  *int     `toml:"max_members_on_chat" json:"max_members_on_chat,omitempty"`
 	MaxRolesInChat                    *int     `toml:"max_roles_in_chat" json:"max_roles_in_chat,omitempty"`
-	SMTPing                           *SMTPing `toml:"smtp" json:"smt_ping,omitempty"`
 	Logging                           *Logging `toml:"log" json:"logging,omitempty"`
-}
-
-type SMTPing struct {
-	SMTPAuthor *string `toml:"smtp_author"`
-	SMTPPort   *int    `toml:"smtp_port"`
 }
 
 type Logging struct {

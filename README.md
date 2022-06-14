@@ -6,9 +6,6 @@ POSTGRES_USER=<user>
 GLOBAL_PASSWORD_SALT=<random string>
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/test?tlsInsecure=true
 SECRET_SIGNING_KEY=<random string>
-SMTP_HOST=smtp.yandex.ru
-SMTP_EMAIL_LOGIN=example@exampe.ru
-SMTP_EMAIL_PASSWD=<password>
 
 ```
 
@@ -16,6 +13,6 @@ Run
 
 ```docker build -t messenger . ```
 
-```docker run -p 8080:8080 --env-file ./linux.env messenger```
+```docker run -p 8080:8080 --env-file ./.env messenger```
 
 

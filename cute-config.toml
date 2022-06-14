@@ -15,9 +15,7 @@ max_count_owned_chats = 128
 max_members_on_chat = 2097152
 max_roles_in_chat = 128
 
-[smtp]
-smtp_author = "http-cute-chat"
-smtp_port = 587
+
 
 [log]
 # 1 - Only console

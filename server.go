@@ -17,7 +17,6 @@ import (
 	"github.com/saime-0/messenger-for-employee/internal/cdl"
 	"github.com/saime-0/messenger-for-employee/internal/cerrors"
 	"github.com/saime-0/messenger-for-employee/internal/config"
-	"github.com/saime-0/messenger-for-employee/internal/email"
 	"github.com/saime-0/messenger-for-employee/internal/healer"
 	"github.com/saime-0/messenger-for-employee/internal/middleware"
 	"github.com/saime-0/messenger-for-employee/internal/piper"
@@ -64,23 +63,10 @@ func main() {
 	}
 	defer db.Close()
 
-	// init smtp
-	newSMTPSender, err := email.NewSMTPSender(
-		*cfg.SMTPing.SMTPAuthor,
-		cfg.SmtpEmailLogin,
-		cfg.SmtpEmailPasswd,
-		cfg.SmtpHost,
-		*cfg.SMTPing.SMTPPort,
-	)
-	if err != nil {
-		hlr.Emergency(cerrors.Wrap(err, "ошибка создания компонента SMTP").Error())
-		os.Exit(69)
-	}
 	// init services
 	services := &service.Services{
 		Repos:     repository.NewRepositories(db),
 		Scheduler: newSched,
-		SMTP:      newSMTPSender,
 		Cache:     newCache,
 	}
 
