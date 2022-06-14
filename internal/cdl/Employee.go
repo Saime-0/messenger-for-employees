@@ -48,6 +48,7 @@ func (c *parentCategory) user() {
 		       coalesce(id, 0),
 		       coalesce(first_name, ''),
 		       coalesce(last_name, ''),
+		       coalesce(photo_url, ''),
 		       coalesce(email, ''),
 		       coalesce(phone_number, '')
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, employeeid)
@@ -68,7 +69,7 @@ func (c *parentCategory) user() {
 	)
 	for rows.Next() {
 		m := new(model.Employee)
-		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName, &m.Email, &m.PhoneNumber); err != nil {
+		if err = rows.Scan(&ptr, &m.EmpID, &m.FirstName, &m.LastName, &m.PhotoURL, &m.Email, &m.PhoneNumber); err != nil {
 			//c.Dataloader.healer.Alert("user (scan rows):" + err.Desk())
 			c.Error = err
 			return

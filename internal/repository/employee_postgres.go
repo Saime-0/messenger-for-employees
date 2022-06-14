@@ -28,6 +28,7 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		SELECT coalesce(e.id, 0),
 		       coalesce(e.first_name,''),
 		       coalesce(e.last_name, ''),
+		       coalesce(e.photo_url, ''),
 		       coalesce(e.email, ''),
 		       coalesce(e.phone_number, '')
 		FROM employees e
@@ -37,6 +38,7 @@ func (r *EmployeesRepo) Me(empID int) (*model.Me, error) {
 		&me.Employee.EmpID,
 		&me.Employee.FirstName,
 		&me.Employee.LastName,
+		&me.Employee.PhotoURL,
 		&me.Employee.Email,
 		&me.Employee.PhoneNumber,
 	)
@@ -62,7 +64,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 		}
 	}
 	rows, err := r.db.Query(`
-		SELECT e.id, e.first_name, e.last_name, e.email, e.phone_number
+		SELECT e.id, e.first_name, e.last_name, e.photo_url, e.email, e.phone_number
 		FROM employees e 
 		    LEFT JOIN positions p ON e.id = p.emp_id 
 			LEFT JOIN members m ON m.emp_id = e.id 
@@ -98,7 +100,7 @@ func (r *EmployeesRepo) FindEmployees(inp *model.FindEmployees) (*model.Employee
 	defer rows.Close()
 	for rows.Next() {
 		m := new(model.Employee)
-		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName, &m.Email, &m.PhoneNumber); err != nil {
+		if err = rows.Scan(&m.EmpID, &m.FirstName, &m.LastName, &m.PhotoURL, &m.Email, &m.PhoneNumber); err != nil {
 			return nil, err
 		}
 		users.Employees = append(users.Employees, m)
@@ -163,12 +165,13 @@ func (r *EmployeesRepo) GetEmployeeIDByRequisites(inp *models.LoginRequisites) (
 
 func (r EmployeesRepo) CreateEmployee(emp *request_models.CreateEmployee) (empID int, err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO employees (first_name, last_name, email, phone_number, password_hash, comment) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO employees (first_name, last_name, photo_url, email, phone_number, password_hash, comment) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
 	`,
 		emp.FirstName,
 		emp.LastName,
+		emp.PhotoUrl,
 		emp.Email,
 		emp.PhoneNumber,
 		emp.Token,

@@ -80,6 +80,7 @@ type ComplexityRoot struct {
 		FirstName   func(childComplexity int) int
 		LastName    func(childComplexity int) int
 		PhoneNumber func(childComplexity int) int
+		PhotoURL    func(childComplexity int) int
 		Tags        func(childComplexity int) int
 	}
 
@@ -173,6 +174,7 @@ type ComplexityRoot struct {
 		Members         func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Notify          func(childComplexity int) int
+		PhotoURL        func(childComplexity int) int
 		Pos             func(childComplexity int) int
 		RoomID          func(childComplexity int) int
 		View            func(childComplexity int) int
@@ -355,6 +357,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Employee.PhoneNumber(childComplexity), true
+
+	case "Employee.photoUrl":
+		if e.complexity.Employee.PhotoURL == nil {
+			break
+		}
+
+		return e.complexity.Employee.PhotoURL(childComplexity), true
 
 	case "Employee.tags":
 		if e.complexity.Employee.Tags == nil {
@@ -778,6 +787,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.Notify(childComplexity), true
 
+	case "Room.photoUrl":
+		if e.complexity.Room.PhotoURL == nil {
+			break
+		}
+
+		return e.complexity.Room.PhotoURL(childComplexity), true
+
 	case "Room.pos":
 		if e.complexity.Room.Pos == nil {
 			break
@@ -1011,6 +1027,7 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
+    photoUrl: String!
 
     email: String!
     phoneNumber: String!
@@ -1035,6 +1052,7 @@ type Room {
     pos: Int!
     roomID: ID!
     name: String!
+    photoUrl: String!
     view: RoomType!
     # for the client
 #    prevRoomID: ID
@@ -2154,6 +2172,41 @@ func (ec *executionContext) _Employee_lastName(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.LastName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Employee_photoUrl(ctx context.Context, field graphql.CollectedField, obj *model.Employee) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Employee",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PhotoURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4300,6 +4353,41 @@ func (ec *executionContext) _Room_name(ctx context.Context, field graphql.Collec
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_photoUrl(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PhotoURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6965,6 +7053,16 @@ func (ec *executionContext) _Employee(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "photoUrl":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Employee_photoUrl(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "email":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Employee_email(ctx, field, obj)
@@ -7931,6 +8029,16 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 		case "name":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Room_name(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "photoUrl":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Room_photoUrl(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

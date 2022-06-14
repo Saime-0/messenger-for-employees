@@ -52,6 +52,7 @@ func (c *parentCategory) room() {
 		       array_position(e.room_seq, r.id),
 				coalesce(r.id, 0),
 				coalesce(r.name, ''),
+				coalesce(r.photo_url, ''),
 				coalesce(r.view, 'TALK'),
 				m.last_msg_read,
 				c.last_msg_id,
@@ -80,7 +81,7 @@ func (c *parentCategory) room() {
 	)
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
+		if err = rows.Scan(&ptr, &m.Pos, &m.RoomID, &m.Name, &m.PhotoURL, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
 			//c.Dataloader.healer.Alert("room (scan rows):" + err.Desk())
 			c.Error = err
 			return

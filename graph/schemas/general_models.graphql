@@ -30,6 +30,7 @@ type Employee {
     empID: ID!
     firstName: String!
     lastName: String!
+    photoUrl: String!
 
     email: String!
     phoneNumber: String!
@@ -54,6 +55,7 @@ type Room {
     pos: Int!
     roomID: ID!
     name: String!
+    photoUrl: String!
     view: RoomType!
     # for the client
 #    prevRoomID: ID

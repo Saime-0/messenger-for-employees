@@ -27,7 +27,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 	}
 
 	rows, err := r.db.Query(`
-		SELECT array_position(e.room_seq, r.id), r.id, r.name, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.notify
+		SELECT array_position(e.room_seq, r.id), r.id, r.name, r.photo_url, r.view, m.emp_id, m.last_msg_read, c.last_msg_id, m.notify
 		FROM rooms r
 	    JOIN employees e
 			ON e.id = $1
@@ -59,7 +59,7 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 
 	for rows.Next() {
 		m := new(model.Room)
-		if err = rows.Scan(&m.Pos, &m.RoomID, &m.Name, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
+		if err = rows.Scan(&m.Pos, &m.RoomID, &m.Name, &m.PhotoURL, &m.View, &m.LastMessageRead, &m.LastMessageID, &m.Notify); err != nil {
 			return nil, err
 		}
 
@@ -145,10 +145,11 @@ func (r *RoomsRepo) EmployeeHasAccessToRooms(employeeID int, chats []int) (noAcc
 
 func (r RoomsRepo) CreateRoom(room *request_models.CreateRoom) (roomID int, err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO rooms (name, view) VALUES ($1, $2)
+		INSERT INTO rooms (name, photo_url, view) VALUES ($1, $2)
 		RETURNING id
 	`,
 		room.Name,
+		room.PhotoUrl,
 		room.View,
 	).Scan(&roomID)
 	return

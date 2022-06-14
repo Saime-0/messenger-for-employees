@@ -5,6 +5,7 @@ import "github.com/saime-0/messenger-for-employee/graph/model"
 type CreateEmployee struct {
 	FirstName   string `json:"first_name"`
 	LastName    string `json:"last_name"`
+	PhotoUrl    string `json:"photo_url"`
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phone_number"`
 	Token       string `json:"token"`
@@ -15,8 +16,9 @@ type CreateEmployeeResult struct {
 }
 
 type CreateRoom struct {
-	Name string         `json:"name"`
-	View model.RoomType `json:"view"`
+	Name     string         `json:"name"`
+	PhotoUrl string         `json:"photo_url"`
+	View     model.RoomType `json:"view"`
 }
 type CreateRoomResult struct {
 	RoomID int `json:"room_id"`

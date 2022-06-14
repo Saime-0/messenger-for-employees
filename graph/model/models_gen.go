@@ -131,6 +131,7 @@ type Employee struct {
 	EmpID       int    `json:"empID"`
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
+	PhotoURL    string `json:"photoUrl"`
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phoneNumber"`
 	Tags        *Tags  `json:"tags"`
@@ -247,6 +248,7 @@ type Room struct {
 	Pos             int      `json:"pos"`
 	RoomID          int      `json:"roomID"`
 	Name            string   `json:"name"`
+	PhotoURL        string   `json:"photoUrl"`
 	View            RoomType `json:"view"`
 	LastMessageRead *int     `json:"lastMessageRead"`
 	LastMessageID   *int     `json:"lastMessageID"`

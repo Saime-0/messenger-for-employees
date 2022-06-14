@@ -22,6 +22,7 @@ create table employees (
                            joined_at bigint default unix_utc_now(),
                            password_hash varchar(64),
                            comment varchar(1024),
+                           photo_url varchar(1024) default '',
                            room_seq bigint[] default ARRAY[NULL::bigint]
 );
 
@@ -33,6 +34,7 @@ create table tags (
 create table rooms (
                        id bigserial primary key,
                        name varchar(128),
+                       photo_url varchar(1024) default '',
                        view room_type
 );
 
@@ -241,7 +243,7 @@ BEGIN
 end;
 $$;
 
-create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, orderPos integer,  room_id bigint, name character varying, view room_type, last_msg_read bigint, last_msg_id bigint, notify bool)
+create or replace function load_emp_rooms(ptrs text[], empids bigint[], limits integer[], offsets integer[]) returns TABLE(ptr text, orderPos integer,  room_id bigint, name character varying,  photo_url varchar, view room_type, last_msg_read bigint, last_msg_id bigint, notify bool)
     language plpgsql
 as $$
 declare emp_rooms text[][] = array[]::text[][]; -- {{ptrs}, {empids}, {seqs}, {room_seq}}
@@ -264,6 +266,7 @@ begin
                         array_position(inp.room_seq::bigint[], r.id),
                         coalesce(r.id, 0),
                         coalesce(r.name, ''),
+                        coalesce(r.photo_url, ''),
                         coalesce(r.view, 'TALK'),
                         m.last_msg_read,
                         c.last_msg_id,
