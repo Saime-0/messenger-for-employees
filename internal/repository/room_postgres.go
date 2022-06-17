@@ -43,8 +43,8 @@ func (r *RoomsRepo) FindRooms(employeeID int, inp *model.FindRooms, params *mode
 			    $3::VARCHAR IS NULL
 			    OR lower(r.name) ILIKE lower($3)
 			)
-		LIMIT $6
-		OFFSET $7
+		LIMIT $4
+		OFFSET $5
 	`,
 		employeeID,
 		inp.RoomID,

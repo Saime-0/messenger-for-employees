@@ -10,6 +10,7 @@ require (
 	github.com/lib/pq v1.10.5
 	github.com/pkg/errors v0.9.1
 	github.com/robbert229/jwt v2.0.0+incompatible
+	github.com/rs/cors v1.8.2
 	github.com/vektah/gqlparser/v2 v2.4.2
 	go.mongodb.org/mongo-driver v1.9.0
 )

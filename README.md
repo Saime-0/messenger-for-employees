@@ -6,13 +6,17 @@ POSTGRES_USER=<user>
 GLOBAL_PASSWORD_SALT=<random string>
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/test?tlsInsecure=true
 SECRET_SIGNING_KEY=<random string>
-
 ```
+
+DB scheme migration:
+
+```psql -U postgres -h localhost -d meem_db -a -f "<path>/20210923213515_postgresql.up.sql"```
+
 
 Run
 
 ```docker build -t messenger . ```
 
-```docker run -p 8080:8080 --env-file ./.env messenger```
+```docker run -d -p 8080:8080 --name messenger --restart always --env-file ./.env messenger```
 
 

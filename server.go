@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 	"github.com/saime-0/messenger-for-employee/graph/directive"
 	"github.com/saime-0/messenger-for-employee/graph/generated"
 	"github.com/saime-0/messenger-for-employee/graph/resolver"
@@ -105,6 +106,7 @@ func main() {
 	// init router and middlewares
 	router := mux.NewRouter()
 	router.Use(
+		cors.AllowAll().Handler,
 		middleware.InitNode(myResolver.Piper, hlr),
 		middleware.ChainShip(cfg, hlr),
 	)
